@@ -3,7 +3,7 @@ package dev.byowa.hdp.model;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", schema = "omop_cdm")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
