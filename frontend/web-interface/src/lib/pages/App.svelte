@@ -1,10 +1,11 @@
 <script>
-  import Header from '../../../indexPage/src/components/Header.svelte';
-  import DashboardCard from '../../../indexPage/src/components/DashboardCard.svelte';
-  import Tabs from '../../../indexPage/src/components/Tabs.svelte';
-  import PersonalInfoForm from '../../../indexPage/src/components/PersonalInfoForm.svelte';
+  import Header from '$lib/components/Header.svelte';
+  import DashboardCard from '$lib/components/DashboardCard.svelte';
+  import Tabs from '$lib/components/Tabs.svelte';
+  import PersonalInfoForm from '$lib/components/PersonalInfoForm.svelte';
   let activeTab = 'personal';
 </script>
+
 
 <Header />
 

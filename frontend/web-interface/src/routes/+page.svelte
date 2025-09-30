@@ -1,5 +1,5 @@
 <script>
-  import PatientDashboard from '$lib/pages/PatientDashboard.svelte';
+  import PatientDashboard from '$lib/pages/App.svelte';
 </script>
 
 <PatientDashboard />
