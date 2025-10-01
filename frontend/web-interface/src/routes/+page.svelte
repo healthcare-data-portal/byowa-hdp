@@ -11,7 +11,9 @@
 <a href="#" on:click|preventDefault={() => go('patient')}>patientView</a><br>
 <a href="#" on:click|preventDefault={() => go('admin')}>adminView</a><br>
 <a href="#" on:click|preventDefault={() => go('login')}>logIn</a><br>
-<a href="#" on:click|preventDefault={() => go('doctor')}>doctorView</a>
+<a href="#" on:click|preventDefault={() => go('doctor')}>doctorView</a><br>
+<a href="#" on:click|preventDefault={() => go('signin')}>signIn</a>
+
 
 <hr>
 
