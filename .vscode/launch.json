@@ -2,6 +2,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Main",
+            "request": "launch",
+            "mainClass": "dev.byowa.hdp.Main",
+            "projectName": "api"
+        },
+        {
+            "type": "java",
             "name": "Spring Boot-ApiApplication<api>",
             "request": "launch",
             "cwd": "${workspaceFolder}",

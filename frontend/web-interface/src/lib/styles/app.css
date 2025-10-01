@@ -1,0 +1,211 @@
+:root{
+  --bg: #f3f6fb;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --text: #0f172a;
+  --primary: #0ea5e9;
+  --border: #e5e7eb;
+  --ring: #dbeafe;
+  --shadow: 0 10px 20px rgba(2,8,23,0.06), 0 6px 6px rgba(2,8,23,0.03);
+  --radius: 14px;
+}
+*{ box-sizing: border-box; }
+html, body, #app { height: 100%; }
+body{
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Apple Color Emoji','Segoe UI Emoji';
+  color: var(--text);
+  background: var(--bg);
+}
+.container{ max-width: 1200px; margin: 0 auto; padding: 24px; }
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 16px 24px; background: var(--card); border-radius: var(--radius);
+  box-shadow: var(--shadow); margin: 16px auto;
+}
+.brand{ font-weight: 700; font-size: 20px; display:flex; align-items:center; gap:12px; }
+.role{ font-size: 12px; color: var(--muted); padding: 2px 8px; border: 1px solid var(--border); border-radius: 999px; }
+.user{ display:flex; align-items:center; gap: 12px; }
+.avatar{ width: 36px; height: 36px; border-radius: 999px; background: #e2e8f0; display:grid; place-items:center; font-weight:600; }
+.btn{
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+.btn.primary{ background: var(--primary); color: white; border-color: transparent; }
+.btn.ghost{ background: var(--card); }
+.btn:focus{ outline: 3px solid var(--ring); outline-offset: 1px; }
+.hero{
+  background: var(--card); padding: 24px; border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.cards{ display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; margin-top: 16px; }
+@media (max-width: 900px){ .cards{ grid-template-columns: 1fr; } }
+.tabs{ display:flex; gap:12px; margin: 18px 0; flex-wrap: wrap; }
+.tab{
+  padding: 8px 14px; border:1px solid var(--border); border-radius: 999px; background: #f8fafc;
+  cursor:pointer; font-weight: 600; color: #0f172a;
+}
+.tab[aria-selected="true"]{ background: var(--text); color: white; }
+.panel{
+  background: var(--card); padding: 24px; border-radius: var(--radius); box-shadow: var(--shadow);
+}
+.grid-2{ display:grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px){ .grid-2{ grid-template-columns: 1fr; } }
+.field{ display:flex; flex-direction: column; gap:6px; }
+.field label{ font-size: 14px; color: #334155; }
+.input{
+  height: 42px; border:1px solid var(--border); background:#f8fafc; border-radius: 10px; padding: 8px 12px;
+}
+.muted{ color: var(--muted); font-size: 13px; }
+.divider{ height:1px; background: var(--border); margin: 18px 0; }
+/* ----- Medical Records table ----- */
+.table-wrap{
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.table{
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead th{
+  text-align: left;
+  font-weight: 700;
+  color: #334155;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: #f8fafc;
+}
+
+.table tbody td{
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.table tbody tr:last-child td{
+  border-bottom: 0;
+}
+
+.truncate{
+  max-width: 640px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Type pill (Diagnosis, Medication, etc.) */
+.badge{
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #111827;
+  background: #eef2ff;
+  border: 1px solid #e5e7eb;
+}
+.badge[data-variant="diagnosis"]{
+  background: #ffe4e6; border-color: #fecdd3; color:#9f1239;
+}
+.badge[data-variant="medication"]{
+  background: #e0e7ff; border-color: #c7d2fe; color:#1e40af;
+}
+
+/* Status chip (active, closed, etc.) */
+.chip{
+  display:inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  background:#0f172a; color:#fff;
+}
+.chip[data-variant="active"]{
+  background:#111827; /* near-black */
+}
+.chip[data-variant="closed"],
+.chip[data-variant="resolved"]{
+  background:#334155;
+}
+
+/* Empty state */
+.empty{
+  display:grid; place-items:center; text-align:center; gap:8px;
+  padding: 24px; border:1px dashed var(--border); border-radius: 12px; background:#f8fafc;
+}
+.empty-icon{ font-size: 28px; }
+.empty-title{ font-weight: 700; }
+/* ----- Generic card rows ----- */
+.card{
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+.card-title{ font-weight: 700; margin-bottom: 4px; }
+.row-between{ display:flex; align-items:center; justify-content:space-between; gap: 16px; }
+
+/* Muted panel used for the bullet list */
+.muted-panel{
+  margin-top: 16px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+}
+.panel-title{ font-weight: 700; }
+
+/* Info band with colored border */
+.info-band{
+  margin-top: 16px;
+  background: #eef5ff;
+  border: 1px solid #cfe0ff;
+  border-left: 6px solid #3b82f6;
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: #1e3a8a;
+}
+
+/* Bullets inside muted panel */
+.bullets{
+  margin: 8px 0 0 0;
+  padding-left: 18px;
+  color: #334155;
+}
+.bullets li{ margin: 6px 0; }
+
+/* Outline buttons */
+.btn.outline{
+  background: transparent;
+  border: 1px solid var(--border);
+}
+.actions-row{
+  display:flex; gap: 10px; margin-top: 14px; flex-wrap: wrap;
+}
+
+/* Accessible toggle switch */
+.switch{
+  --w: 48px; --h: 28px;
+  position: relative;
+  width: var(--w);
+  height: var(--h);
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: #0f172a; /* off default dark to match screenshot */
+  cursor: pointer;
+  outline: none;
+}
+.switch[data-checked="false"]{ background: #e2e8f0; }
+.switch .knob{
+  position: absolute; top: 3px; left: 3px;
+  width: 22px; height: 22px; border-radius: 999px;
+  background: #fff; transition: transform .18s ease;
+}
+.switch[data-checked="true"] .knob{ transform: translateX(20px); }
