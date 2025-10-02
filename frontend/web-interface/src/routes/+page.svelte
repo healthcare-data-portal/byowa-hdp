@@ -1,5 +1,17 @@
 <script>
-  import PatientDashboard from '$lib/pages/App.svelte';
+    import Login from '$lib/pages/Login.svelte';
+    import { goto } from '$app/navigation';
+
+    function handleLogin() {
+        goto('/app');
+    }
+
+    const handleRegister = () => goto('/register');
+    const handleForgot   = () => goto('/forgot');
 </script>
 
-<PatientDashboard />
+<Login
+        on:login={handleLogin}
+        on:register={handleRegister}
+        on:forgotPassword={handleForgot}
+/>

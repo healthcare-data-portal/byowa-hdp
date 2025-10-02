@@ -209,3 +209,89 @@ body{
   background: #fff; transition: transform .18s ease;
 }
 .switch[data-checked="true"] .knob{ transform: translateX(20px); }
+
+/* --- Auth centered layout --- */
+.auth-center {
+    min-height: calc(100vh - 48px);
+    display: grid;
+    place-items: center;
+    padding: 24px;
+}
+
+.auth-card {
+    width: min(560px, 92vw);
+    padding: 28px 28px 24px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    background: var(--card);
+    text-align: center;
+}
+
+.brand-logo {
+    width: 60px; height: 60px; margin: 6px auto 8px;
+    border-radius: 14px;
+    display: grid; place-items: center;
+    color: #0f172a;
+    background: #eef2ff; border: 1px solid #e5e7eb;
+}
+
+.auth-title {
+    margin: 10px 0 2px;
+    font-size: 22px;
+    line-height: 1.25;
+}
+.subtitle {
+    margin: 0 0 16px;
+}
+
+.form-stack {
+    display: grid;
+    gap: 14px;
+    text-align: left;
+}
+
+/* Inputs with icons */
+.input-group {
+    position: relative;
+    display: grid;
+    grid-template-columns: 44px 1fr 44px;
+    align-items: center;
+    border: 1px solid var(--border);
+    background: #f8fafc;
+    border-radius: 12px;
+}
+.ix {
+    display: grid;
+    place-items: center;
+    color: var(--muted);
+}
+.input.has-icon {
+    height: 46px;
+    border: none;
+    background: transparent;
+    padding-left: 0;
+}
+.input.has-icon:focus {
+    outline: none;
+}
+.icon-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    height: 100%;
+    display: grid;
+    place-items: center;
+}
+
+/* Helpers & buttons */
+.helper-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.btn.block { width: 100%; }
+.btn.btn-lg { padding: 12px 16px; border-radius: 12px; font-weight: 700; }
+.btn.small { padding: 8px 12px; border-radius: 999px; }
