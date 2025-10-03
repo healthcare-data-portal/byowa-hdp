@@ -1,5 +1,6 @@
 {
-  "dependencies": {
-    "lucide-svelte": "^0.544.0"
+  "devDependencies": {
+    "@tsconfig/svelte": "^5.0.5",
+    "svelte": "^5.39.7"
   }
 }
