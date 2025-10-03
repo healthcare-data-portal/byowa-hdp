@@ -1,0 +1,88 @@
+/* Scoped by .admin-view to avoid global bleed */
+.admin-view .muted { color: #6b7280; }
+
+.admin-view .topbar{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 16px; border-bottom:1px solid #eee; background:#fff;
+}
+.admin-view .brand{ font-weight:700; font-size:18px; margin-right:8px; }
+.admin-view .role-chip{
+  background:#be123c; color:#fff; font-size:12px; padding:4px 8px; border-radius:999px;
+}
+.admin-view .right{ display:flex; align-items:center; gap:12px; }
+.admin-view .profile{ display:flex; align-items:center; gap:10px; }
+.admin-view .avatar{
+  width:36px; height:36px; border-radius:50%; display:grid; place-items:center; background:#e5e7eb; font-weight:600;
+}
+.admin-view .meta .name{ font-weight:600; }
+.admin-view .meta .email{ font-size:12px; color:#6b7280; }
+
+.admin-view .page{ background:#f6f7fb; min-height:100vh; padding:20px; }
+.admin-view .page-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
+.admin-view h1{ margin:0 0 4px 0; }
+
+.admin-view .cards{
+  display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap:12px; margin-bottom:16px;
+}
+.admin-view .card{
+  background:#fff; border:1px solid #eee; border-radius:12px; padding:16px;
+}
+.admin-view .card-title{ color:#6b7280; font-size:14px; }
+.admin-view .card-value{ font-size:28px; font-weight:700; margin:6px 0; }
+.admin-view .card-sub{ font-size:12px; color:#6b7280; }
+
+.admin-view .panel{
+  background:#fff; border:1px solid #eee; border-radius:12px; margin:16px 0; overflow:hidden;
+}
+.admin-view .panel-head{ padding:16px; border-bottom:1px solid #f0f0f0; }
+.admin-view h2{ margin:0 0 4px 0; font-size:18px; }
+
+.admin-view .table-wrap{ overflow:auto; }
+.admin-view .table{ width:100%; border-collapse:separate; border-spacing:0; }
+.admin-view .table thead th{
+  text-align:left; font-size:12px; color:#6b7280; font-weight:600; padding:12px 16px; border-bottom:1px solid #f0f0f0;
+}
+.admin-view .table tbody td{
+  padding:12px 16px; border-bottom:1px solid #f5f5f5; vertical-align:middle;
+}
+.admin-view .left{ text-align:left; }
+.admin-view .right{ text-align:right; }
+
+.admin-view .role-tag{
+  padding:4px 8px; border-radius:999px; font-size:12px; font-weight:600; display:inline-block;
+  background:#e5e7eb; color:#111827;
+}
+.admin-view .role-tag.admin{ background:#fecdd3; color:#991b1b; }
+.admin-view .role-tag.doctor{ background:#e5e7eb; color:#111827; }
+.admin-view .role-tag.patient{ background:#e5e7eb; color:#111827; }
+
+.admin-view .switch{
+  position:relative; display:inline-block; width:44px; height:24px; margin-right:8px;
+}
+.admin-view .switch input{ display:none; }
+.admin-view .slider{
+  position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0;
+  background:#e5e7eb; transition:.2s; border-radius:999px;
+}
+.admin-view .slider:before{
+  position:absolute; content:''; height:18px; width:18px; left:3px; top:3px;
+  background:white; transition:.2s; border-radius:999px; box-shadow:0 1px 2px rgba(0,0,0,.1);
+}
+.admin-view .switch input:checked + .slider{ background:#111827; }
+.admin-view .switch input:checked + .slider:before{ transform: translateX(20px); }
+.admin-view .status-text{ font-size:12px; color:#111827; vertical-align:middle; }
+
+.admin-view .btn{
+  border:1px solid #e5e7eb; background:#fff; padding:8px 12px; border-radius:10px; cursor:pointer;
+}
+.admin-view .btn:hover{ background:#f9fafb; }
+.admin-view .btn.primary{ background:#111827; color:#fff; border-color:#111827; }
+.admin-view .btn.primary:hover{ opacity:.9; }
+.admin-view .btn.ghost{ background:#fff; color:#111827; }
+
+.admin-view .badge{
+  font-size:12px; padding:4px 8px; border-radius:999px; background:#e5e7eb; color:#111827; font-weight:600;
+}
+.admin-view .badge.ok{ background:#111827; color:#fff; }
+.admin-view .badge.pending{ background:#f3f4f6; color:#374151; }
