@@ -1,0 +1,6 @@
+node_modules/
+frontend/web-interface/node_modules/
+frontend/web-interface/.svelte-kit/
+backend/api/target/
+.idea/
+.vscode/
