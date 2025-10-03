@@ -1,6 +1,7 @@
 <script>
     import { createEventDispatcher } from 'svelte';
     import { Eye, EyeOff, Mail, Lock } from 'lucide-svelte';
+    import { goto } from '$app/navigation';
 
     const dispatch = createEventDispatcher();
     let email = '';
@@ -14,8 +15,9 @@
         e.preventDefault();
         submitLogin();
     }
+
     const toggleShow = () => (showPassword = !showPassword);
-    const register   = () => dispatch('register');
+    const register   = () => goto('/register');
 </script>
 
 <section class="auth-center">
@@ -65,7 +67,7 @@
                 </div>
             </div>
 
-            <button class="btn primary block btn-lg" type="submit">Sign In</button>
+            <button class="btn primary block btn-lg" type="submit">Log In</button>
             <div class="divider"></div>
             <button class="btn outline block" type="button" on:click={register}>
                 Create Account
