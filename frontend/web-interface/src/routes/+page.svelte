@@ -1,30 +1,17 @@
 <script>
-  import PatientView from '$lib/pages/patientView.svelte';
-  import AdminView from '$lib/pages/adminView.svelte';
-  import DoctorView from '$lib/pages/doctorView.svelte';
-  import LogIn from '$lib/pages/logIn.svelte';
+    import Login from '$lib/pages/Login.svelte';
+    import { goto } from '$app/navigation';
 
-  let view = ''; // '', 'patient', 'admin', 'doctor', 'login'
-  const go = (v) => { view = v; };
+    function handleLogin() {
+        goto('/app');
+    }
+
+    const handleRegister = () => goto('/register');
+    const handleForgot   = () => goto('/forgot');
 </script>
 
-<a href="#" on:click|preventDefault={() => go('patient')}>patientView</a><br>
-<a href="#" on:click|preventDefault={() => go('admin')}>adminView</a><br>
-<a href="#" on:click|preventDefault={() => go('login')}>logIn</a><br>
-<a href="#" on:click|preventDefault={() => go('doctor')}>doctorView</a><br>
-<a href="#" on:click|preventDefault={() => go('signin')}>signIn</a>
-
-
-<hr>
-
-{#if view === 'patient'}
-  <PatientView />
-{:else if view === 'admin'}
-  <AdminView />
-{:else if view === 'login'}
-  <LogIn />
-{:else if view === 'doctor'}
-  <DoctorView />
-{:else}
-  <p>Choose a page above.</p>
-{/if}
+<Login
+        on:login={handleLogin}
+        on:register={handleRegister}
+        on:forgotPassword={handleForgot}
+/>
