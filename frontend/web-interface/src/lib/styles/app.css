@@ -209,3 +209,56 @@ body{
   background: #fff; transition: transform .18s ease;
 }
 .switch[data-checked="true"] .knob{ transform: translateX(20px); }
+
+
+/* ------------------------------
+   Doctor Dashboard styles
+   ------------------------------ */
+
+.notice {
+  margin-top: 12px;
+  background: #eef5ff;
+  border-left: 5px solid var(--primary);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  color: #1e3a8a;
+  font-size: 14px;
+}
+
+.table-wrap {
+  margin-top: 12px;
+}
+
+.table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.hero .actions-row .btn.ghost:hover {
+  background: #f1f5f9;
+}
+
+@media (max-width: 900px) {
+  .table thead {
+    display: none;
+  }
+  .table tr {
+    display: block;
+    margin-bottom: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .table td {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .table td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: #334155;
+  }
+}
