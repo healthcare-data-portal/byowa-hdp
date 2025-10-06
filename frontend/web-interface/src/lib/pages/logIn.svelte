@@ -3,21 +3,35 @@
     import { Eye, EyeOff, Mail, Lock } from 'lucide-svelte';
     import { goto } from '$app/navigation';
 
-    const dispatch = createEventDispatcher();
     let email = '';
     let password = '';
     let showPassword = false;
+    let error = '';
 
-    function submitLogin() {
-        dispatch('login', { email, password });
+    function toggleShow() {
+        showPassword = !showPassword;
     }
-    function onSubmit(e) {
+
+    async function onSubmit(e) {
         e.preventDefault();
-        submitLogin();
+        error = '';
+
+        // Login-Request an Backend
+        const res = await fetch('http://localhost:8080/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: email, password })
+        });
+        const data = await res.json();
+        if (res.ok && data.token) {
+            localStorage.setItem('token', data.token);
+            goto('/app');
+        } else {
+            error = data.message || 'Login fehlgeschlagen';
+        }
     }
 
-    const toggleShow = () => (showPassword = !showPassword);
-    const register   = () => goto('/register');
+    const register = () => goto('/register');
 </script>
 
 <section class="auth-center">
@@ -32,13 +46,13 @@
                 <div class="input-group">
                     <span class="ix"><Mail size={18} /></span>
                     <input
-                            id="email"
-                            class="input has-icon"
-                            type="email"
-                            bind:value={email}
-                            placeholder="Enter your email"
-                            autocomplete="email"
-                            required
+                        id="email"
+                        class="input has-icon"
+                        type="email"
+                        bind:value={email}
+                        placeholder="Enter your email"
+                        autocomplete="email"
+                        required
                     />
                 </div>
             </div>
@@ -49,13 +63,13 @@
                 <div class="input-group">
                     <span class="ix"><Lock size={18} /></span>
                     <input
-                            id="password"
-                            class="input has-icon"
-                            type={showPassword ? 'text' : 'password'}
-                            bind:value={password}
-                            placeholder="Enter your password"
-                            autocomplete="current-password"
-                            required
+                        id="password"
+                        class="input has-icon"
+                        type={showPassword ? 'text' : 'password'}
+                        bind:value={password}
+                        placeholder="Enter your password"
+                        autocomplete="current-password"
+                        required
                     />
                     <button type="button" class="icon-btn" on:click={toggleShow}>
                         {#if showPassword}
@@ -66,6 +80,10 @@
                     </button>
                 </div>
             </div>
+
+            {#if error}
+                <div class="form-error" role="alert">{error}</div>
+            {/if}
 
             <button class="btn primary block btn-lg" type="submit">Log In</button>
             <div class="divider"></div>

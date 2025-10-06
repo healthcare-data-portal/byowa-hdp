@@ -10,7 +10,7 @@
     let showConfirm = false;
     let error = '';
 
-    function onSubmit(e) {
+    async function onSubmit(e) {
         e.preventDefault();
 
         error = '';
@@ -19,11 +19,29 @@
         if (password.length < 8) { error = 'Password must be at least 8 characters.'; return; }
         if (password !== confirm) { error = 'Passwords do not match.'; return; }
 
-        goto('/app');
+        // Request an Backend senden
+        const body = { username: email, password };
+        try {
+            const res = await fetch('http://localhost:8080/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json();
+            if (res.ok && data.token) {
+                localStorage.setItem('token', data.token);
+                goto('/app');
+            } else {
+                error = data.message || 'Registration failed';
+            }
+        } catch (err) {
+            error = 'Network error';
+        }
     }
 
     const backToLogin = () => goto('/');
 </script>
+
 
 <section class="auth-center">
     <div class="auth-card panel">
