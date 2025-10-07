@@ -44,4 +44,8 @@ Username: postgres
 Password: password
 
 
+## Database Tests
+
+docker exec -it hdp_postgres psql -U postgres -d hdp_auth
+SELECT * FROM omop_cdm.users; 
 
