@@ -31,7 +31,7 @@
     return dt.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
-  // ----- FHIR helpers (lightweight port from your React example) -----
+  // FHIR helpers:
   function detectFHIRMessageType(fhirData) {
     const resourceType = (fhirData.resourceType || '').toLowerCase();
 
@@ -88,7 +88,7 @@
     }
   }
 
-  // ----- File upload handler -----
+  // File upload handler:
   async function handleFileUpload(event) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -159,7 +159,6 @@
 <Header />
 
 <main class="container">
-  <!-- Header Section -->
   <section class="hero" aria-labelledby="doctor-dashboard">
     <div class="row-between">
       <div>
@@ -167,7 +166,6 @@
         <p class="muted" style="margin:0;">Manage patient care and medical records</p>
       </div>
 
-      <!-- REPLACED: single Upload FHIR Message button (matches Figma) -->
       <div class="actions-row">
         <button class="btn primary" on:click={() => (showUploadDialog = true)} aria-label="Upload FHIR Message">
           📤 Upload FHIR Message
