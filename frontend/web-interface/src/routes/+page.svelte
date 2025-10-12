@@ -1,7 +1,7 @@
 <script>
     import { goto } from '$app/navigation';
 
-    import Login from '$lib/pages/Login.svelte';
+    import LogIn from '$lib/pages/LogIn.svelte';
     import PatientView from '$lib/pages/patientView.svelte';
     import AdminView from '$lib/pages/adminView.svelte';
     import DoctorView from '$lib/pages/doctorView.svelte';
@@ -34,7 +34,7 @@
 
 {#key view}
     {#if view === 'login'}
-        <Login
+        <LogIn
                 on:login={handleLogin}
                 on:register={handleRegister}
                 on:forgotPassword={handleForgot}
