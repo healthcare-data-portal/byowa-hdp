@@ -3,12 +3,15 @@ package dev.byowa.hdp.dto;
 public class UserResponse {
     private Long id;
     private String username;
-
+    private String role;
+    private Integer personId;
     public UserResponse() {}
 
-    public UserResponse(Long id, String username) {
+    public UserResponse(Long id, String username, String role, Integer personId) {
         this.id = id;
         this.username = username;
+        this.role = role;
+        this.personId = personId;
     }
 
     public Long getId() {
@@ -25,5 +28,17 @@ public class UserResponse {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+    public String getRole() {
+        return role;
+    }
+    public void setRole(String role) {
+        this.role = role;
+    }
+    public Integer getPersonId() {
+        return personId;
+    }
+    public void setPersonId(Integer personId) {
+        this.personId = personId;
     }
 }

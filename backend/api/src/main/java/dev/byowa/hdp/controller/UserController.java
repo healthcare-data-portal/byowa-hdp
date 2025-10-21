@@ -21,6 +21,10 @@ public class UserController {
                     UserResponse response = new UserResponse();
                     response.setId(user.getId());
                     response.setUsername(user.getUsername());
+                    response.setRole(user.getRole().name());
+                    if (user.getPerson() != null) {
+                        response.setPersonId(user.getPerson().getId());
+                    }
                     return ResponseEntity.ok(response);
                 })
                 .orElse(ResponseEntity.notFound().build());
@@ -38,3 +42,4 @@ public class UserController {
                 .orElse(ResponseEntity.notFound().build());
     }
 }
+

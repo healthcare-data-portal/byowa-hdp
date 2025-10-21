@@ -31,5 +31,9 @@
 		"onlyBuiltDependencies": [
 			"esbuild"
 		]
+	},
+	"dependencies": {
+		"@iconify/svelte": "^5.0.2",
+		"lucide-svelte": "^0.544.0"
 	}
 }
