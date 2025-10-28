@@ -12,7 +12,7 @@
 <header class="topbar" role="banner">
   <div class="brand">
     <span>Healthcare Data Portal</span>
-    <span class="role">🧑‍⚕️ Patient</span>
+    <span class="role"><img src="~src/lib/assets/pictures/stats.png" alt="icon" width="20" height="20"> Patient</span>
   </div>
   <div class="user">
     <div class="avatar" aria-hidden="true">{initials}</div>
