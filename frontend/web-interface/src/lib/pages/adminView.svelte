@@ -1,7 +1,15 @@
 <script>
-  // no data fetching here, just structure & styles
+  // structure & styles only — no data wiring here
+  import Header from '../components/Header.svelte';
   import '/src/lib/styles/adminView.css';
 </script>
+
+<!-- Top header (role pill auto-styles for admin) -->
+<Header
+  role="admin"
+  roleIcon="/src/lib/assets/pictures/white_shield.png"
+/>
+
 
 <div class="page-wrap">
   <div class="h1">Admin Dashboard</div>
@@ -10,19 +18,31 @@
   <!-- Stats row -->
   <div class="row">
     <div class="card">
-      <div class="stat-title">👥 Total Users</div>
+      <div class="stat-title">
+        <img src="/src/lib/assets/pictures/users.png" alt="icon" class="icon" width="12px" height="12px">
+        Total Users
+      </div>
       <div class="stat-value">—</div>
     </div>
     <div class="card">
-      <div class="stat-title">📈 Active Records</div>
+      <div class="stat-title">
+        <img src="/src/lib/assets/pictures/statistics.png" alt="icon" class="icon" width="12px" height="12px">
+        Active Records
+      </div>
       <div class="stat-value">—</div>
     </div>
     <div class="card">
-      <div class="stat-title">🧪 FHIR Messages</div>
+      <div class="stat-title">
+        <img src="/src/lib/assets/pictures/database-management.png" alt="icon" class="icon" width="12px" height="12px">
+        FHIR Messages
+      </div>
       <div class="stat-value">—</div>
     </div>
     <div class="card">
-      <div class="stat-title">🛡️ System Health</div>
+      <div class="stat-title">
+        <img src="/src/lib/assets/pictures/shield.png" alt="icon" class="icon" width="12px" height="12px">
+        System Health
+      </div>
       <div class="stat-value">—</div>
     </div>
   </div>

@@ -17,7 +17,7 @@
 
   {#if !records || records.length === 0}
     <div class="empty">
-      <div class="empty-icon">🗂️</div>
+      <div class="empty-icon"><img src="/src/lib/assets/pictures/folder.png" alt="icon" class="icon" width="25px" height="25px"></div>
       <div class="empty-title">No medical records yet</div>
       <div class="muted">When your backend is connected, records will appear here automatically.</div>
     </div>

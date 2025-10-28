@@ -14,7 +14,8 @@
   const handleCancel = () => (isEdit = false);
 </script>
 
-<Header />
+<!-- Header: patient pill (dark), white text; point to your patient icon -->
+<Header role="patient" roleIcon="/src/lib/assets/pictures/white-user.png" />
 
 <main class="container">
   <!-- Hero / Stats -->
@@ -25,8 +26,14 @@
         <p class="muted" style="margin:0;">View and manage your personal health information</p>
       </div>
       <div style="display:flex; gap:8px;">
-        <button class="btn ghost" aria-label="Export PDF">📥 Export PDF</button>
-        <button class="btn ghost" aria-label="Detailed View">👁️ Detailed View</button>
+        <button class="btn ghost" aria-label="Export PDF">
+          <img src="/src/lib/assets/pictures/file-export.png" alt="icon" class="icon" width="12" height="12" />
+          Export PDF
+        </button>
+        <button class="btn ghost" aria-label="Detailed View">
+          <img src="/src/lib/assets/pictures/eye.png" alt="icon" class="icon" width="12" height="12" />
+          Detailed View
+        </button>
         <button class="btn primary" aria-label="Edit Profile" on:click={toggleEdit}>
           {isEdit ? 'Exit Edit' : 'Edit Profile'}
         </button>
@@ -42,7 +49,10 @@
 
   {#if isEdit}
     <div class="notice" role="status">
-      <span>🔔 You are in edit mode. Make your changes and click <strong>“Save Changes”</strong> when finished.</span>
+      <span>
+        <img src="/src/lib/assets/pictures/bell.png" alt="icon" class="icon" width="12" height="12" />
+        You are in edit mode. Make your changes and click <strong>“Save Changes”</strong> when finished.
+      </span>
     </div>
   {/if}
 

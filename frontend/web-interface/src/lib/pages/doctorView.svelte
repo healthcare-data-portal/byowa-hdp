@@ -3,6 +3,7 @@
   import DashboardCard from '$lib/components/DashboardCard.svelte';
   import Tabs from '$lib/components/Tabs.svelte';
 
+  // UI state
   let activeTab = 'patients';
   let isEdit = false;
 
@@ -13,25 +14,18 @@
 
   const toggleEdit = () => (isEdit = !isEdit);
 
-  const patients = [
-    { id: 'p1', name: 'Jane Doe', email: 'jane.doe@example.com', dob: '1983-06-12', gender: 'Female', consentGiven: true },
-    { id: 'p2', name: 'Michael Lee', email: 'michael.lee@example.com', dob: '1989-11-02', gender: 'Male', consentGiven: false },
-    { id: 'p3', name: 'Amanda Ray', email: 'amanda.ray@example.com', dob: '1970-05-18', gender: 'Female', consentGiven: true }
-  ];
-
-  // records must be mutable (we'll add uploaded records here)
-  let records = [
-    { id: 'r1', patientId: 'p1', patientName: 'Jane Doe', type: 'Diagnosis', title: 'Diabetes', date: '2025-10-03', status: 'Active', formats: ['FHIR', 'OMOP'] },
-    { id: 'r2', patientId: 'p2', patientName: 'Michael Lee', type: 'Medication', title: 'Hypertension Meds', date: '2025-09-29', status: 'Closed', formats: ['FHIR', 'OMOP'] },
-    { id: 'r3', patientId: 'p3', patientName: 'Amanda Ray', type: 'Procedure', title: 'Knee Replacement', date: '2025-10-02', status: 'Active', formats: ['FHIR', 'OMOP'] }
-  ];
+  // ===== No mock data =====
+  const patients = [];       // fill from API later
+  let records = [];          // will be populated by upload, or from API later
 
   function formatDate(d) {
+    if (!d) return '—';
     const dt = new Date(d);
+    if (isNaN(dt.getTime())) return '—';
     return dt.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
   }
 
-  // FHIR helpers:
+  // -------- FHIR helpers (keep: used by local upload path) --------
   function detectFHIRMessageType(fhirData) {
     const resourceType = (fhirData.resourceType || '').toLowerCase();
 
@@ -44,7 +38,6 @@
       case 'medicationstatement':
         return 'medication';
       case 'observation':
-        // if lab category, mark as lab_result
         if (fhirData.category?.[0]?.coding?.[0]?.code === 'laboratory') return 'lab_result';
         return 'observation';
       default:
@@ -88,7 +81,7 @@
     }
   }
 
-  // File upload handler:
+  // -------- Local File Upload → adds a record to the empty list --------
   async function handleFileUpload(event) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -113,6 +106,7 @@
       const newRecord = {
         id: `record-${Date.now()}`,
         patientId,
+        // fallback to raw id if our (currently empty) patients array doesn’t know it
         patientName: patients.find(p => p.id === patientId)?.name || patientId,
         date: new Date().toISOString(),
         type: recordType,
@@ -145,7 +139,7 @@
       uploadResult = { message: 'Failed to process FHIR file. Please check the file format and try again.' };
     }
 
-    // reset the input so same file can be re-uploaded if needed
+    // reset input so same file can be re-uploaded
     event.target.value = '';
   }
 
@@ -156,7 +150,8 @@
   }
 </script>
 
-<Header />
+<!-- Doctor header: black pill, white text; supply your doctor icon path -->
+<Header role="doctor" roleIcon="/src/lib/assets/pictures/stethoscope.png" />
 
 <main class="container">
   <section class="hero" aria-labelledby="doctor-dashboard">
@@ -168,7 +163,8 @@
 
       <div class="actions-row">
         <button class="btn primary" on:click={() => (showUploadDialog = true)} aria-label="Upload FHIR Message">
-          📤 Upload FHIR Message
+          <img src="/src/lib/assets/pictures/download.png" alt="icon" class="icon" width="12" height="12" />
+          Upload FHIR Message
         </button>
       </div>
     </div>
@@ -215,24 +211,30 @@
             </tr>
           </thead>
           <tbody>
-            {#each patients as p}
+            {#if patients.length === 0}
               <tr>
-                <td data-label="Name">{p.name}</td>
-                <td data-label="Email">{p.email}</td>
-                <td data-label="Date of Birth">{formatDate(p.dob)}</td>
-                <td data-label="Gender">{p.gender}</td>
-                <td data-label="Consent Status">
-                  <span class="badge" data-variant={p.consentGiven ? 'default' : 'secondary'}>
-                    {p.consentGiven ? 'Consented' : 'No Consent'}
-                  </span>
-                </td>
-                <td data-label="Actions">
-                  <button class="btn ghost" on:click={() => (activeTab = 'records')}>
-                    View Records
-                  </button>
-                </td>
+                <td colspan="6" class="muted">No patients to display yet.</td>
               </tr>
-            {/each}
+            {:else}
+              {#each patients as p}
+                <tr>
+                  <td data-label="Name">{p.name}</td>
+                  <td data-label="Email">{p.email}</td>
+                  <td data-label="Date of Birth">{formatDate(p.dob)}</td>
+                  <td data-label="Gender">{p.gender}</td>
+                  <td data-label="Consent Status">
+                    <span class="badge" data-variant={p.consentGiven ? 'default' : 'secondary'}>
+                      {p.consentGiven ? 'Consented' : 'No Consent'}
+                    </span>
+                  </td>
+                  <td data-label="Actions">
+                    <button class="btn ghost" on:click={() => (activeTab = 'records')}>
+                      View Records
+                    </button>
+                  </td>
+                </tr>
+              {/each}
+            {/if}
           </tbody>
         </table>
       </div>
@@ -258,26 +260,32 @@
             </tr>
           </thead>
           <tbody>
-            {#each records as r}
+            {#if records.length === 0}
               <tr>
-                <td data-label="Patient">{r.patientName}</td>
-                <td data-label="Type"><span class="badge">{r.type}</span></td>
-                <td data-label="Title">{r.title}</td>
-                <td data-label="Date">{formatDate(r.date)}</td>
-                <td data-label="Status">
-                  <span class="chip" data-variant={r.status.toLowerCase() === 'active' ? 'active' : 'closed'}>
-                    {r.status}
-                  </span>
-                </td>
-                <td data-label="Data Format">
-                  <div style="display:flex;gap:.25rem;flex-wrap:wrap;">
-                    {#each r.formats as f}
-                      <span class="badge">{f}</span>
-                    {/each}
-                  </div>
-                </td>
+                <td colspan="6" class="muted">No records to display yet.</td>
               </tr>
-            {/each}
+            {:else}
+              {#each records as r}
+                <tr>
+                  <td data-label="Patient">{r.patientName}</td>
+                  <td data-label="Type"><span class="badge">{r.type}</span></td>
+                  <td data-label="Title">{r.title}</td>
+                  <td data-label="Date">{formatDate(r.date)}</td>
+                  <td data-label="Status">
+                    <span class="chip" data-variant={r.status?.toLowerCase() === 'active' ? 'active' : 'closed'}>
+                      {r.status}
+                    </span>
+                  </td>
+                  <td data-label="Data Format">
+                    <div style="display:flex;gap:.25rem;flex-wrap:wrap;">
+                      {#each r.formats || [] as f}
+                        <span class="badge">{f}</span>
+                      {/each}
+                    </div>
+                  </td>
+                </tr>
+              {/each}
+            {/if}
           </tbody>
         </table>
       </div>
@@ -285,7 +293,7 @@
   {/if}
 </main>
 
-<!-- Upload Dialog (simple inline dialog, uses existing classes) -->
+<!-- Upload Dialog -->
 {#if showUploadDialog}
   <div class="upload-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;z-index:60;">
     <div class="card" style="width:min(880px,95%);max-height:85vh;overflow:auto;padding:1.25rem;">
