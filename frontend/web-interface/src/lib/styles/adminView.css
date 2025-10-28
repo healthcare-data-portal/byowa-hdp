@@ -1,0 +1,47 @@
+:root{
+  --bg:#f3f6fb; --card:#fff; --ink:#0f172a; --muted:#6b7280;
+  --ring:#e5e7eb; --primary:#111827; --accent:#dc2626; --good:#16a34a;
+}
+
+.page-wrap{ background:var(--bg); min-height:100vh; padding:24px; }
+.h1{ font-size:1.5rem; font-weight:700; color:var(--ink); }
+.sub{ color:var(--muted); margin-top:4px; }
+
+.row{ display:grid; gap:16px; margin-top:20px; }
+@media(min-width:900px){ .row{ grid-template-columns:repeat(4,1fr); } }
+
+.card{
+  background:var(--card); border:1px solid var(--ring); border-radius:16px;
+  padding:20px; box-shadow:0 1px 2px rgba(16,24,40,.04);
+}
+.stat-title{ display:flex; align-items:center; gap:8px; color:var(--muted); font-weight:600; }
+.stat-value{ font-size:2rem; font-weight:700; color:var(--ink); margin-top:6px; min-height:2.2rem; }
+
+.section{ margin-top:28px; }
+.section .title{ font-size:1.1rem; font-weight:700; color:var(--ink); }
+.section .desc{ color:var(--muted); margin-top:4px; }
+
+.toolbar{ display:flex; gap:12px; align-items:center; justify-content:space-between; margin:12px 0; }
+.input{ width:100%; border:1px solid var(--ring); border-radius:10px; padding:10px 12px; background:#fff; }
+.btn{ background:#fff; border:1px solid var(--ring); padding:10px 14px; border-radius:10px; font-weight:600; }
+.btn.primary{ background:#111827; color:#fff; border-color:#111827; }
+
+.table-wrap{ background:#fff; border:1px solid var(--ring); border-radius:12px; padding:8px; }
+.table{ width:100%; border-collapse:separate; border-spacing:0 8px; }
+.th, .td{ text-align:left; padding:12px 14px; }
+.th{ color:var(--muted); font-size:.9rem; font-weight:600; }
+.tr{ background:#fff; border:1px solid var(--ring); border-radius:10px; }
+
+.empty{
+  padding:24px; text-align:center; color:var(--muted);
+  border:1px dashed var(--ring); border-radius:12px; background:#fff; margin-top:8px;
+}
+
+/* optional visuals for switches/badges if you add rows later */
+.badge{ padding:4px 10px; border-radius:999px; font-weight:700; font-size:.8rem; display:inline-flex; align-items:center; gap:6px; }
+.badge.admin{ background:#fee2e2; color:#991b1b; }
+.badge.patient{ background:#eef2ff; color:#3730a3; }
+.badge.doctor{ background:#ecfeff; color:#155e75; }
+
+.switch{ position:relative; width:44px; height:24px; background:#e5e7eb; border-radius:999px; }
+.switch .knob{ position:absolute; top:2px; left:2px; width:20px; height:20px; background:#fff; border-radius:50%; border:1px solid var(--ring); }
