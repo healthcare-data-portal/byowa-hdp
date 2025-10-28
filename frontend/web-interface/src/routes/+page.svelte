@@ -10,7 +10,7 @@
 
     const go = (v) => { view = v; };
 
-    function handleLogin() { goto('/app'); }
+    const handleLogin = () => goto('/login');
     const handleRegister = () => goto('/register');
     const handleForgot   = () => goto('/forgot');
 
