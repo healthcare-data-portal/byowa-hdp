@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.byowa.hdp.mapper.FhirPatientMapper;
 import dev.byowa.hdp.model.clinical.Person;
+import dev.byowa.hdp.model.clinical.PersonName;
+import dev.byowa.hdp.repository.PersonNameRepository;
+import dev.byowa.hdp.repository.PersonRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,7 +15,8 @@ public class FhirImportService {
 
     @Autowired private ObjectMapper objectMapper;
     @Autowired private FhirPatientMapper fhirPatientMapper;
-    //@Autowired private PersonRepository personRepository;
+    @Autowired private PersonNameRepository personNameRepository;
+    @Autowired private PersonRepository personRepository;
 
     public void processFhirJson(String fhirJson) throws Exception {
         JsonNode root = objectMapper.readTree(fhirJson);
@@ -53,9 +57,22 @@ public class FhirImportService {
         }
     }
 
+
     private void processPatient(JsonNode patientNode) {
+        if (patientNode.has("active") && !patientNode.get("active").asBoolean()) {
+            System.out.println("Skipping inactive patient.");
+            return;
+        }
         Person person = fhirPatientMapper.mapFhirPatientToOmop(patientNode);
-        //personRepository.save(person);
+
+        // Nächste freie ID setzen
+        Integer maxId = personRepository.findMaxId();
+        person.setId(maxId == null ? 1 : maxId + 1);
+
+        personRepository.save(person);
+        for (PersonName personName : person.getPersonNames()) {
+            personNameRepository.save(personName);
+        }
         System.out.println("Saved Patient → Person: " + person.getId());
     }
 }
