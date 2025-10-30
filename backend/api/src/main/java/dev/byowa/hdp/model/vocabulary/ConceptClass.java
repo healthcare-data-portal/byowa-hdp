@@ -17,9 +17,9 @@ public class ConceptClass {
     @Column(name = "concept_class_name", nullable = false)
     private String conceptClassName;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "concept_class_concept_id", nullable = false)
+    // @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "concept_class_concept_id", nullable = true)
     private Concept conceptClassConcept;
 
     public String getConceptClassId() {

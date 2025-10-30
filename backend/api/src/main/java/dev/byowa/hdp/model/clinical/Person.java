@@ -9,6 +9,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "person", schema = "omop_cdm")
@@ -84,6 +86,18 @@ public class Person {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ethnicity_source_concept_id")
     private Concept ethnicitySourceConcept;
+
+    @OneToMany(mappedBy = "person", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PersonName> personNames = new ArrayList<>();
+
+    public List<PersonName> getPersonNames() {
+        return personNames;
+    }
+
+    public void setPersonNames(List<PersonName> personNames) {
+        this.personNames = personNames;
+    }
+
 
     public Integer getId() {
         return id;
