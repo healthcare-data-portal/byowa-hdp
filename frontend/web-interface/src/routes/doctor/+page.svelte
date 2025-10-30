@@ -1,4 +1,5 @@
 <script>
+    import DoctorView from '$lib/pages/doctorView.svelte';
     import { onMount } from 'svelte';
     import { getRoleFromToken, pathForRole } from '$lib/auth';
     import { goto } from '$app/navigation';
@@ -6,8 +7,8 @@
     onMount(() => {
         const token = localStorage.getItem('token');
         const role = token ? getRoleFromToken(token) : null;
-        goto(pathForRole(role));
+        if (role !== 'DOCTOR' && role !== 'ADMIN') goto(pathForRole(role));
     });
 </script>
 
-<div style="display:grid;place-items:center;height:100vh">Loading…</div>
+<DoctorView />

@@ -1,37 +1,33 @@
 <script>
-    import RegisterForm from '$lib/pages/Register.svelte';
+    import Register from '$lib/pages/Register.svelte';
     import { goto } from '$app/navigation';
 
-    let error = '';
+    async function handleSubmit(e) {
+        const { email, password } = e.detail;
 
-    async function handleRegister(event) {
-        const { email, password } = event.detail;
-        error = '';
         try {
-            const res = await fetch('http://localhost:8080/api/auth/register', {
+            const r = await fetch('http://localhost:8080/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: email, password }),
+                body: JSON.stringify({ username: email, password })
             });
-            const data = await res.json();
-            if (res.ok && data.token) {
-                localStorage.setItem('token', data.token);
-                goto('/app');
-            } else {
-                error = data.message || 'Registration failed';
-            }
-        } catch (e) {
-            error = 'Network error';
-        }
-    }
 
-    function handleCancel() {
-        goto('/');
+            if (r.ok) {
+                await goto('/login');
+                return;
+            }
+
+            let msg = 'Registration failed';
+            try {
+                const data = await r.json();
+                msg = data?.message || msg;
+            } catch {  }
+
+            alert(msg);
+        } catch {
+            alert('Network error');
+        }
     }
 </script>
 
-<RegisterForm on:submit={handleRegister} on:cancel={handleCancel} />
-
-{#if error}
-    <div class="form-error" role="alert">{error}</div>
-{/if}
+<Register on:submit={handleSubmit} on:cancel={() => goto('/login')} />

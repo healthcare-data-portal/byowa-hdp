@@ -1,37 +1,33 @@
 <script>
-    import LogIn from '$lib/pages/LogIn.svelte';
+    import Login from '$lib/pages/Login.svelte';
+    import { getRoleFromToken, pathForRole } from '$lib/auth';
     import { goto } from '$app/navigation';
 
-    let error = '';
+    async function handleLogin(e) {
+        const { email, password } = e.detail;
 
-    async function handleLogin(event) {
-        const { email, password } = event.detail;
-        error = '';
         try {
             const res = await fetch('http://localhost:8080/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: email, password }),
+                body: JSON.stringify({ username: email, password })
             });
-            const data = await res.json();
-            if (res.ok && data.token) {
-                localStorage.setItem('token', data.token);
-                goto('/app');
-            } else {
-                error = data.message || 'Login failed';
-            }
-        } catch (e) {
-            error = 'Network error';
-        }
-    }
 
-    function handleRegister() {
-        goto('/register');
+            let data = null;
+            try { data = await res.json(); } catch {}
+
+            if (res.ok && data?.token) {
+                localStorage.setItem('token', data.token);
+                const role = getRoleFromToken(data.token);
+                await goto(pathForRole(role));
+            } else {
+                const msg = data?.message || 'Login failed';
+                alert(msg);
+            }
+        } catch {
+            alert('Network error');
+        }
     }
 </script>
 
-<LogIn on:login={handleLogin} on:register={handleRegister} />
-
-{#if error}
-    <div class="form-error" role="alert">{error}</div>
-{/if}
+<Login on:login={handleLogin} />

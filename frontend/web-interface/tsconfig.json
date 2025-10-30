@@ -1,11 +1,14 @@
 {
-  "compilerOptions": {
-    "target": "ES2020",
-    "module": "ESNext",
-    "moduleResolution": "Node",
-    "types": ["svelte"],
-    "noEmit": true,
-    "skipLibCheck": true
-  },
-  "include": ["src/**/*.ts", "src/**/*.svelte"]
+	"extends": "./.svelte-kit/tsconfig.json",
+	"compilerOptions": {
+		"types": ["svelte"],
+		"lib": ["ES2020", "DOM"],
+		"target": "ES2020",
+		"module": "ESNext",
+		"moduleResolution": "Node",
+		"skipLibCheck": true,
+		"noEmit": true,
+		"strict": true
+	},
+	"include": ["src/**/*.ts", "src/**/*.svelte"]
 }
