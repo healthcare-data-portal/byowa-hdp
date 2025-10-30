@@ -1,89 +1,85 @@
-// FhirPatientMapper.java
+// Java
 package dev.byowa.hdp.mapper;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import dev.byowa.hdp.model.clinical.Person;
 import dev.byowa.hdp.model.clinical.PersonName;
 import dev.byowa.hdp.model.vocabulary.Concept;
+import dev.byowa.hdp.repository.ConceptRepository;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Iterator;
 
 @Component
 public class FhirPatientMapper {
 
-    public Person mapFhirPatientToOmop(JsonNode fhirPatient) {
-        Person person = new Person();
+    // OMOP concept placeholders for unknown values
+    private static final int UNKNOWN_GENDER_CONCEPT_ID = 99999997;
+    private static final int UNKNOWN_RACE_CONCEPT_ID = 99999998;
+    private static final int UNKNOWN_ETHN_CONCEPT_ID = 99999999;
 
-        // Identifier as personSourceValue
+    private final ConceptRepository conceptRepository;
+
+    public FhirPatientMapper(ConceptRepository conceptRepository) {
+        this.conceptRepository = conceptRepository;
+    }
+
+    // Convenience overload that creates a new Person
+    public Person mapFhirPatientToOmop(JsonNode fhirPatient) {
+        return mapFhirPatientToOmop(fhirPatient, null);
+    }
+
+    // Map onto an existing Person (replace name list) or create a new one
+    public Person mapFhirPatientToOmop(JsonNode fhirPatient, Person target) {
+        Person person = (target != null) ? target : new Person();
+
+        // Identifier -> person_source_value
         String identifier = null;
         if (fhirPatient.has("identifier") && fhirPatient.get("identifier").isArray() && fhirPatient.get("identifier").size() > 0) {
             identifier = fhirPatient.get("identifier").get(0).path("value").asText(null);
         }
         person.setPersonSourceValue(identifier);
 
-        //name
-        // Extract names from FHIR Patient and map to PersonName entity
-        if (fhirPatient.has("name") && fhirPatient.get("name").isArray()) {
-            JsonNode telecomArray = fhirPatient.get("telecom");
-            String email = extractTelecomValue(telecomArray, "email");
-            String telephone = extractTelecomValue(telecomArray, "phone");
+        // Email/phone from telecom
+        JsonNode telecomArray = fhirPatient.get("telecom");
+        String email = extractTelecomValue(telecomArray, "email");
+        String telephone = extractTelecomValue(telecomArray, "phone");
 
-            for (JsonNode nameNode : fhirPatient.get("name")) {
-                String familyName = nameNode.path("family").asText(null);
-                String givenName = null;
-                String middleName = null;
-                // Collect all given names
-                if (nameNode.has("given") && nameNode.get("given").isArray()) {
-                    if (nameNode.get("given").size() > 0) {
-                        givenName = nameNode.get("given").get(0).asText(null);
-                    }
-                    if (nameNode.get("given").size() > 1) {
-                        // Join all further given names as middleName
-                        StringBuilder middle = new StringBuilder();
-                        for (int i = 1; i < nameNode.get("given").size(); i++) {
-                            if (middle.length() > 0) middle.append(" ");
-                            middle.append(nameNode.get("given").get(i).asText());
-                        }
-                        middleName = middle.toString();
-                    }
-                }
-                String use = nameNode.path("use").asText(null);
+        // Build exactly one PersonName (replace existing list)
+        person.getPersonNames().clear();
+        JsonNode preferredName = getPreferredNameNode(fhirPatient.path("name"));
+        if (preferredName != null && !preferredName.isMissingNode()) {
+            String family = preferredName.path("family").asText(null);
+            String givenCombined = joinGiven(preferredName.path("given"));
 
-                // Create and fill PersonName entity
-                PersonName personName = new PersonName();
-                personName.setPerson(person);
-                personName.setFamilyName(familyName);
-                personName.setGivenName(givenName);
-                personName.setMiddleName(middleName);
-                personName.setUse(use);
-                personName.setEmail(email);
-                personName.setTelephone(telephone);
-                person.getPersonNames().add(personName);
-
-            }
+            PersonName pn = new PersonName();
+            pn.setPerson(person);
+            pn.setFamilyName(family);
+            pn.setGivenName(givenCombined);
+            pn.setEmail(email);
+            pn.setTelephone(telephone);
+            person.getPersonNames().add(pn);
         }
+
         // Gender
         String gender = fhirPatient.path("gender").asText();
-        Concept genderConcept = new Concept();
-        genderConcept.setId(mapGenderToConceptId(gender));
+        int genderId = mapGenderToConceptId(gender);
+        Concept genderConcept = conceptRepository.getReferenceById(genderId);
         person.setGenderConcept(genderConcept);
         person.setGenderSourceConcept(genderConcept);
 
-        // Race (Dummy-Concept, till Mapping implemented)
-        Concept raceConcept = new Concept();
-        raceConcept.setId(0);
+        // Race/Ethnicity (use unknown placeholders)
+        Concept raceConcept = conceptRepository.getReferenceById(UNKNOWN_RACE_CONCEPT_ID);
         person.setRaceConcept(raceConcept);
         person.setRaceSourceConcept(raceConcept);
 
-        // Ethnicity (Dummy-Concept, till Mapping implemented)
-        Concept ethnicityConcept = new Concept();
-        ethnicityConcept.setId(0);
+        Concept ethnicityConcept = conceptRepository.getReferenceById(UNKNOWN_ETHN_CONCEPT_ID);
         person.setEthnicityConcept(ethnicityConcept);
         person.setEthnicitySourceConcept(ethnicityConcept);
 
-        // Birthdate
+        // Birthdate -> year/month/day
         String birthDateStr = fhirPatient.path("birthDate").asText();
         if (birthDateStr != null && !birthDateStr.isEmpty()) {
             LocalDate birthDate = LocalDate.parse(birthDateStr, DateTimeFormatter.ISO_DATE);
@@ -92,16 +88,34 @@ public class FhirPatientMapper {
             person.setDayOfBirth(birthDate.getDayOfMonth());
         }
 
-        // deceased (ignore for now)
-        // maritalStatus (ignore for now)
-        // photos (ignore for now)
-        // contact (ignore for now)
-        // address
-        // TODO: "maybe add address to PersonName(PersonInformation)?"
-
         return person;
     }
 
+    // Pick "official" name, fallback to first element
+    private JsonNode getPreferredNameNode(JsonNode namesArray) {
+        if (namesArray == null || !namesArray.isArray() || namesArray.size() == 0) return null;
+        for (JsonNode n : namesArray) {
+            if ("official".equalsIgnoreCase(n.path("use").asText())) return n;
+        }
+        return namesArray.get(0);
+    }
+
+    // Join all given names with a space
+    private String joinGiven(JsonNode givenArray) {
+        if (givenArray == null || !givenArray.isArray() || givenArray.size() == 0) return null;
+        StringBuilder sb = new StringBuilder();
+        Iterator<JsonNode> it = givenArray.elements();
+        while (it.hasNext()) {
+            String part = it.next().asText();
+            if (!part.isBlank()) {
+                if (sb.length() > 0) sb.append(" ");
+                sb.append(part);
+            }
+        }
+        return sb.length() == 0 ? null : sb.toString();
+    }
+
+    // Extract first telecom value of a given system
     private String extractTelecomValue(JsonNode telecomArray, String system) {
         if (telecomArray != null && telecomArray.isArray()) {
             for (JsonNode telecom : telecomArray) {
@@ -113,11 +127,12 @@ public class FhirPatientMapper {
         return null;
     }
 
+    // Map FHIR gender to OMOP concept id
     private int mapGenderToConceptId(String gender) {
-        return switch (gender.toLowerCase()) {
+        return switch (gender == null ? "" : gender.toLowerCase()) {
             case "male" -> 8507;
             case "female" -> 8532;
-            default -> 0;
+            default -> UNKNOWN_GENDER_CONCEPT_ID;
         };
     }
 }

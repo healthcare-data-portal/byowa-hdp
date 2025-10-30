@@ -17,9 +17,9 @@ public class Domain {
     @Column(name = "domain_name", nullable = false)
     private String domainName;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "domain_concept_id", nullable = false)
+    // @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "domain_concept_id", nullable = true)
     private Concept domainConcept;
 
     public String getDomainId() {

@@ -25,9 +25,9 @@ public class Vocabulary {
     @Column(name = "vocabulary_version")
     private String vocabularyVersion;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "vocabulary_concept_id", nullable = false)
+    // @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "vocabulary_concept_id", nullable = true)
     private Concept vocabularyConcept;
 
     public String getVocabularyId() {
