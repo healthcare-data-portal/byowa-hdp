@@ -1,4 +1,5 @@
 <script>
+    import AdminView from '$lib/pages/adminView.svelte';
     import { onMount } from 'svelte';
     import { getRoleFromToken, pathForRole } from '$lib/auth';
     import { goto } from '$app/navigation';
@@ -6,8 +7,8 @@
     onMount(() => {
         const token = localStorage.getItem('token');
         const role = token ? getRoleFromToken(token) : null;
-        goto(pathForRole(role));
+        if (role !== 'ADMIN') goto(pathForRole(role));
     });
 </script>
 
-<div style="display:grid;place-items:center;height:100vh">Loading…</div>
+<AdminView />
