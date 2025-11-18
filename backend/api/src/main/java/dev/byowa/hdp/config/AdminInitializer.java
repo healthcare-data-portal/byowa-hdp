@@ -20,7 +20,7 @@ public class AdminInitializer {
 
     @PostConstruct
     public void init() {
-        String adminUsername = "admin@gmail.com";
+        String adminUsername = "admin@hdp.com";
         if (userRepository.findByUsername(adminUsername).isEmpty()) {
             User admin = new User();
             admin.setUsername(adminUsername);
