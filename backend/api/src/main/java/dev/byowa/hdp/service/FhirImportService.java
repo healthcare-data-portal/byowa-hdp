@@ -1,17 +1,21 @@
-// Java
 package dev.byowa.hdp.service;
 
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
 import dev.byowa.hdp.mapper.FhirPatientMapper;
+import dev.byowa.hdp.mapper.FhirPractitionerMapper;
+import dev.byowa.hdp.model.Role;
 import dev.byowa.hdp.model.User;
 import dev.byowa.hdp.model.clinical.Person;
 import dev.byowa.hdp.model.healthsystem.Location;
-import dev.byowa.hdp.repository.PersonRepository;
-import dev.byowa.hdp.repository.UserRepository;
+import dev.byowa.hdp.model.healthsystem.Provider;
 import dev.byowa.hdp.repository.LocationRepository;
+import dev.byowa.hdp.repository.PersonRepository;
+import dev.byowa.hdp.repository.ProviderRepository;
+import dev.byowa.hdp.repository.UserRepository;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,14 +27,27 @@ import java.util.Optional;
 @Service
 public class FhirImportService {
 
-    @Autowired private FhirPatientMapper fhirPatientMapper;
-    @Autowired private PersonRepository personRepository;
-    @Autowired private UserRepository userRepository;
-    @Autowired private LocationRepository locationRepository;
+    @Autowired
+    private FhirPatientMapper fhirPatientMapper;
+
+    @Autowired
+    private FhirPractitionerMapper fhirPractitionerMapper;
+
+    @Autowired
+    private PersonRepository personRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private LocationRepository locationRepository;
+
+    @Autowired
+    private ProviderRepository providerRepository;
+
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    // new FHIR-Context (R4)
     private final FhirContext fhirContext = FhirContext.forR4();
 
     public void processFhirJson(String fhirJson) throws Exception {
@@ -45,6 +62,7 @@ public class FhirImportService {
         switch (resourceType) {
             case "Bundle" -> processBundle((Bundle) resource);
             case "Patient" -> processPatient((Patient) resource);
+            case "Practitioner" -> processPractitioner((Practitioner) resource);
             default -> throw new UnsupportedOperationException("Unsupported resourceType: " + resourceType);
         }
     }
@@ -60,6 +78,7 @@ public class FhirImportService {
             String type = resource.fhirType();
             switch (type) {
                 case "Patient" -> processPatient((Patient) resource);
+                case "Practitioner" -> processPractitioner((Practitioner) resource);
                 default -> System.out.println("Skipping unsupported resourceType: " + type);
             }
         }
@@ -67,23 +86,20 @@ public class FhirImportService {
 
     @Transactional
     public void processPatient(Patient patient) {
-        // Skip inactive patients
         if (patient.hasActive() && Boolean.FALSE.equals(patient.getActive())) {
             System.out.println("Skipping inactive patient.");
             return;
         }
 
-        // Extract identifier value for de-duplication and user creation
-        String identifier = extractIdentifierValue(patient);
+        String identifier = extractPatientIdentifierValue(patient);
         if (identifier == null || identifier.isBlank()) {
             throw new IllegalArgumentException("Patient has no identifier value (cannot ensure uniqueness).");
         }
 
-        // Find existing person by source value
         Optional<Person> existing = personRepository.findByPersonSourceValue(identifier);
 
         Person person = existing
-                .map(p -> fhirPatientMapper.mapFhirPatientToOmop(patient, p)) // update existing
+                .map(p -> fhirPatientMapper.mapFhirPatientToOmop(patient, p))
                 .orElseGet(() -> {
                     Person created = fhirPatientMapper.mapFhirPatientToOmop(patient);
                     Integer maxId = personRepository.findMaxId();
@@ -91,12 +107,8 @@ public class FhirImportService {
                     return created;
                 });
 
-
-
-        // Save person (PersonName is cascaded with orphanRemoval)
         personRepository.save(person);
 
-        // Map and persist Location (deduplicate by location_source_value)
         Location resolvedLocation = null;
         Location loc = fhirPatientMapper.mapFhirPatientToLocation(patient);
         if (loc != null && loc.getLocationSourceValue() != null && !loc.getLocationSourceValue().isBlank()) {
@@ -111,13 +123,11 @@ public class FhirImportService {
             }
         }
 
-        // Link Location to Person
         if (resolvedLocation != null) {
             person.setLocation(resolvedLocation);
         }
         personRepository.save(person);
 
-        // Create user if not exists (username = identifier)
         if (!userRepository.existsByUsername(identifier)) {
             String username = identifier + "@hdp.com";
             String hashed = passwordEncoder.encode(identifier);
@@ -129,11 +139,50 @@ public class FhirImportService {
         System.out.println("Saved/Updated Patient → Person: " + person.getId());
     }
 
-    // Helper: take the first identifier.value from HAPI Patient
-    private String extractIdentifierValue(Patient patient) {
+    @Transactional
+    public void processPractitioner(Practitioner practitioner) {
+        String identifier = extractPractitionerIdentifierValue(practitioner);
+        if (identifier == null || identifier.isBlank()) {
+            throw new IllegalArgumentException("Practitioner has no identifier value (cannot ensure uniqueness).");
+        }
+
+        Optional<Provider> existing = providerRepository.findByProviderSourceValue(identifier);
+
+        Provider provider = existing
+                .map(p -> fhirPractitionerMapper.mapFhirPractitionerToProvider(practitioner, p))
+                .orElseGet(() -> {
+                    Provider created = fhirPractitionerMapper.mapFhirPractitionerToProvider(practitioner, null);
+                    Integer maxId = providerRepository.findMaxId();
+                    created.setId(maxId == null ? 1 : maxId + 1);
+                    return created;
+                });
+
+        providerRepository.save(provider);
+
+        if (!userRepository.existsByUsername(identifier)) {
+            String username = identifier + "@hdp.com";
+            String hashed = passwordEncoder.encode(identifier);
+            User user = new User(username, hashed);
+            user.setRole(Role.DOCTOR);
+            userRepository.save(user);
+        }
+
+        System.out.println("Saved/Updated Practitioner → Provider: " + provider.getId());
+    }
+
+    private String extractPatientIdentifierValue(Patient patient) {
         if (patient.hasIdentifier() && !patient.getIdentifier().isEmpty()) {
             if (patient.getIdentifierFirstRep().hasValue()) {
                 return patient.getIdentifierFirstRep().getValue();
+            }
+        }
+        return null;
+    }
+
+    private String extractPractitionerIdentifierValue(Practitioner practitioner) {
+        if (practitioner.hasIdentifier() && !practitioner.getIdentifier().isEmpty()) {
+            if (practitioner.getIdentifierFirstRep().hasValue()) {
+                return practitioner.getIdentifierFirstRep().getValue();
             }
         }
         return null;
