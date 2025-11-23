@@ -1,0 +1,48 @@
+{
+  "resourceType": "Bundle",
+  "type": "collection",
+  "entry": [
+    {
+      "resource": {
+        "resourceType": "Patient",
+        "id": "bundle-patient",
+        "active": true,
+        "identifier": [
+          {
+            "system": "http://hospital.smarthealth.org/mrn",
+            "value": "P-BUN-010"
+          }
+        ],
+        "name": [
+          {
+            "use": "official",
+            "family": "Bundled",
+            "given": ["Paula"]
+          }
+        ],
+        "gender": "female",
+        "birthDate": "1992-04-12"
+      }
+    },
+    {
+      "resource": {
+        "resourceType": "Practitioner",
+        "id": "bundle-practitioner",
+        "identifier": [
+          {
+            "system": "http://hospital.smarthealth.org/empid",
+            "value": "PR-BUN-020"
+          }
+        ],
+        "name": [
+          {
+            "use": "official",
+            "family": "Bundled",
+            "given": ["Peter"]
+          }
+        ],
+        "gender": "male"
+      }
+    }
+  ]
+}

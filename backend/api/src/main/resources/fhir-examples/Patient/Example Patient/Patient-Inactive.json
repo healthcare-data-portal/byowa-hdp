@@ -1,0 +1,20 @@
+{
+  "resourceType": "Patient",
+  "id": "patient-inactive",
+  "active": false,
+  "identifier": [
+    {
+      "system": "http://hospital.smarthealth.org/mrn",
+      "value": "P-INACT-002"
+    }
+  ],
+  "name": [
+    {
+      "use": "official",
+      "family": "Dormant",
+      "given": ["Ida"]
+    }
+  ],
+  "gender": "male",
+  "birthDate": "1985-07-30"
+}

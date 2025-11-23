@@ -1,0 +1,20 @@
+{
+  "resourceType": "Patient",
+  "id": "patient-minimal",
+  "active": true,
+  "identifier": [
+    {
+      "system": "http://hospital.smarthealth.org/mrn",
+      "value": "P-MIN-001"
+    }
+  ],
+  "name": [
+    {
+      "use": "official",
+      "family": "Minimal",
+      "given": ["Pat"]
+    }
+  ],
+  "gender": "female",
+  "birthDate": "1990-01-15"
+}
