@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 
 @Component
+@Order(1)
 @Transactional
 public class ConceptInitializer implements ApplicationRunner {
 

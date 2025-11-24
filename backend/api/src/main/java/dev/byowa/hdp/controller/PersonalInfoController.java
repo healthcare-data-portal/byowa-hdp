@@ -6,55 +6,55 @@ import dev.byowa.hdp.model.clinical.Person;
 import dev.byowa.hdp.model.clinical.PersonName;
 import dev.byowa.hdp.model.healthsystem.Location;
 import dev.byowa.hdp.repository.UserRepository;
-import dev.byowa.hdp.service.JwtService;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
-@RequestMapping("/api/personal-info")
+@RequestMapping("/personal-info") 
 public class PersonalInfoController {
 
+    private static final Logger logger = LoggerFactory.getLogger(PersonalInfoController.class);
     private final UserRepository userRepository;
-    private final JwtService jwtService;
 
-    public PersonalInfoController(UserRepository userRepository, JwtService jwtService) {
+    public PersonalInfoController(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.jwtService = jwtService;
     }
 
     @GetMapping
-    public ResponseEntity<?> getPersonalInfo(HttpServletRequest req) {
-        // Extract user from JWT token
-        String auth = req.getHeader("Authorization");
-        if (auth == null || !auth.startsWith("Bearer ")) {
+    public ResponseEntity<?> getPersonalInfo(Authentication authentication) {
+        logger.debug("Received request for personal info");
+        
+        if (authentication == null || !authentication.isAuthenticated()) {
+            logger.warn("Unauthenticated request");
             return ResponseEntity.status(401).body("Unauthorized");
         }
         
-        String token = auth.substring(7);
-        String username;
-        try {
-            username = jwtService.extractUsername(token);
-            if (jwtService.isExpired(token)) {
-                return ResponseEntity.status(401).body("Token expired");
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(401).body("Invalid token");
-        }
+        String username = authentication.getName();
+        logger.debug("Username from authentication: {}", username);
 
-        // Find user and associated person
-        User user = userRepository.findByUsername(username)
-            .orElse(null);
+        User user = userRepository.findByUsername(username).orElse(null);
         
-        if (user == null || user.getPerson() == null) {
-            return ResponseEntity.status(404).body("User or Person data not found");
+        if (user == null) {
+            logger.error("User not found: {}", username);
+            return ResponseEntity.status(404).body("User not found");
+        }
+        
+        logger.debug("User found: {}", user.getUsername());
+        
+        if (user.getPerson() == null) {
+            logger.error("Person data not found for user: {}", username);
+            return ResponseEntity.status(404).body("Person data not found");
         }
 
         Person person = user.getPerson();
+        logger.debug("Person found: {}", person.getId());
+        
         PersonalInfoResponse response = new PersonalInfoResponse();
 
-        // Extract personal information
-        if (!person.getPersonNames().isEmpty()) {
+        if (person.getPersonNames() != null && !person.getPersonNames().isEmpty()) {
             PersonName name = person.getPersonNames().get(0);
             response.setFullName(buildFullName(name));
             response.setEmail(name.getEmail());
@@ -82,6 +82,7 @@ public class PersonalInfoController {
             response.setCountry(location.getCountrySourceValue());
         }
 
+        logger.debug("Returning personal info response");
         return ResponseEntity.ok(response);
     }
 
