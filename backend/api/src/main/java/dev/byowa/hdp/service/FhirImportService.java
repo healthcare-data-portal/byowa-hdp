@@ -1,13 +1,22 @@
-// Java
 package dev.byowa.hdp.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.parser.IParser;
 import dev.byowa.hdp.mapper.FhirPatientMapper;
+import dev.byowa.hdp.mapper.FhirPractitionerMapper;
+import dev.byowa.hdp.model.Role;
 import dev.byowa.hdp.model.User;
 import dev.byowa.hdp.model.clinical.Person;
+import dev.byowa.hdp.model.healthsystem.Location;
+import dev.byowa.hdp.model.healthsystem.Provider;
+import dev.byowa.hdp.repository.LocationRepository;
 import dev.byowa.hdp.repository.PersonRepository;
+import dev.byowa.hdp.repository.ProviderRepository;
 import dev.byowa.hdp.repository.UserRepository;
+import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Practitioner;
+import org.hl7.fhir.r4.model.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,77 +27,111 @@ import java.util.Optional;
 @Service
 public class FhirImportService {
 
-    @Autowired private ObjectMapper objectMapper;
-    @Autowired private FhirPatientMapper fhirPatientMapper;
-    @Autowired private PersonRepository personRepository;
-    @Autowired private UserRepository userRepository;
+    @Autowired
+    private FhirPatientMapper fhirPatientMapper;
+
+    @Autowired
+    private FhirPractitionerMapper fhirPractitionerMapper;
+
+    @Autowired
+    private PersonRepository personRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private LocationRepository locationRepository;
+
+    @Autowired
+    private ProviderRepository providerRepository;
+
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    public void processFhirJson(String fhirJson) throws Exception {
-        JsonNode root = objectMapper.readTree(fhirJson);
+    private final FhirContext fhirContext = FhirContext.forR4();
 
-        String resourceType = root.path("resourceType").asText();
+    public void processFhirJson(String fhirJson) throws Exception {
+        IParser parser = fhirContext.newJsonParser();
+        Resource resource = (Resource) parser.parseResource(fhirJson);
+
+        String resourceType = resource.fhirType();
         if (resourceType == null || resourceType.isEmpty()) {
             throw new IllegalArgumentException("Missing 'resourceType' field.");
         }
 
         switch (resourceType) {
-            case "Bundle" -> processBundle(root);
-            case "Patient" -> processPatient(root);
+            case "Bundle" -> processBundle((Bundle) resource);
+            case "Patient" -> processPatient((Patient) resource);
+            case "Practitioner" -> processPractitioner((Practitioner) resource);
             default -> throw new UnsupportedOperationException("Unsupported resourceType: " + resourceType);
         }
     }
 
-    private void processBundle(JsonNode bundle) {
-        if (!bundle.has("entry")) {
+    private void processBundle(Bundle bundle) {
+        if (bundle == null || bundle.getEntry().isEmpty()) {
             throw new IllegalArgumentException("FHIR Bundle missing 'entry' array.");
         }
-        for (JsonNode entry : bundle.path("entry")) {
-            JsonNode resource = entry.path("resource");
-            if (resource.isMissingNode()) continue;
+        for (Bundle.BundleEntryComponent entry : bundle.getEntry()) {
+            Resource resource = entry.getResource();
+            if (resource == null) continue;
 
-            String type = resource.path("resourceType").asText();
+            String type = resource.fhirType();
             switch (type) {
-                case "Patient" -> processPatient(resource);
+                case "Patient" -> processPatient((Patient) resource);
+                case "Practitioner" -> processPractitioner((Practitioner) resource);
                 default -> System.out.println("Skipping unsupported resourceType: " + type);
             }
         }
     }
 
     @Transactional
-    public void processPatient(JsonNode patientNode) {
-        // Skip inactive patients
-        if (patientNode.has("active") && !patientNode.get("active").asBoolean()) {
+    public void processPatient(Patient patient) {
+        if (patient.hasActive() && Boolean.FALSE.equals(patient.getActive())) {
             System.out.println("Skipping inactive patient.");
             return;
         }
 
-        // Extract identifier value for de-duplication and user creation
-        String identifier = extractIdentifierValue(patientNode);
+        String identifier = extractPatientIdentifierValue(patient);
         if (identifier == null || identifier.isBlank()) {
             throw new IllegalArgumentException("Patient has no identifier value (cannot ensure uniqueness).");
         }
 
-        // Find existing person by source value
         Optional<Person> existing = personRepository.findByPersonSourceValue(identifier);
 
         Person person = existing
-                .map(p -> fhirPatientMapper.mapFhirPatientToOmop(patientNode, p)) // update existing
+                .map(p -> fhirPatientMapper.mapFhirPatientToOmop(patient, p))
                 .orElseGet(() -> {
-                    Person created = fhirPatientMapper.mapFhirPatientToOmop(patientNode);
+                    Person created = fhirPatientMapper.mapFhirPatientToOmop(patient);
                     Integer maxId = personRepository.findMaxId();
                     created.setId(maxId == null ? 1 : maxId + 1);
                     return created;
                 });
 
-        // Save person (PersonName is cascaded with orphanRemoval)
         personRepository.save(person);
 
-        // Create user if not exists (username = identifier)
+        Location resolvedLocation = null;
+        Location loc = fhirPatientMapper.mapFhirPatientToLocation(patient);
+        if (loc != null && loc.getLocationSourceValue() != null && !loc.getLocationSourceValue().isBlank()) {
+            Optional<Location> existingLoc = locationRepository.findByLocationSourceValue(loc.getLocationSourceValue());
+            if (existingLoc.isPresent()) {
+                resolvedLocation = existingLoc.get();
+            } else {
+                Integer maxLocId = locationRepository.findMaxId();
+                loc.setId(maxLocId == null ? 1 : maxLocId + 1);
+                resolvedLocation = locationRepository.save(loc);
+                System.out.println("Saved Location → id: " + resolvedLocation.getId());
+            }
+        }
+
+        if (resolvedLocation != null) {
+            person.setLocation(resolvedLocation);
+        }
+        personRepository.save(person);
+
         if (!userRepository.existsByUsername(identifier)) {
+            String username = identifier + "@hdp.com";
             String hashed = passwordEncoder.encode(identifier);
-            User user = new User(identifier, hashed);
+            User user = new User(username, hashed);
             user.setPerson(person);
             userRepository.save(user);
         }
@@ -96,10 +139,51 @@ public class FhirImportService {
         System.out.println("Saved/Updated Patient → Person: " + person.getId());
     }
 
-    // Helper: take the first identifier.value
-    private String extractIdentifierValue(JsonNode patientNode) {
-        if (patientNode.has("identifier") && patientNode.get("identifier").isArray() && patientNode.get("identifier").size() > 0) {
-            return patientNode.get("identifier").get(0).path("value").asText(null);
+    @Transactional
+    public void processPractitioner(Practitioner practitioner) {
+        String identifier = extractPractitionerIdentifierValue(practitioner);
+        if (identifier == null || identifier.isBlank()) {
+            throw new IllegalArgumentException("Practitioner has no identifier value (cannot ensure uniqueness).");
+        }
+
+        Optional<Provider> existing = providerRepository.findByProviderSourceValue(identifier);
+
+        Provider provider = existing
+                .map(p -> fhirPractitionerMapper.mapFhirPractitionerToProvider(practitioner, p))
+                .orElseGet(() -> {
+                    Provider created = fhirPractitionerMapper.mapFhirPractitionerToProvider(practitioner, null);
+                    Integer maxId = providerRepository.findMaxId();
+                    created.setId(maxId == null ? 1 : maxId + 1);
+                    return created;
+                });
+
+        providerRepository.save(provider);
+
+        if (!userRepository.existsByUsername(identifier)) {
+            String username = identifier + "@hdp.com";
+            String hashed = passwordEncoder.encode(identifier);
+            User user = new User(username, hashed);
+            user.setRole(Role.DOCTOR);
+            userRepository.save(user);
+        }
+
+        System.out.println("Saved/Updated Practitioner → Provider: " + provider.getId());
+    }
+
+    private String extractPatientIdentifierValue(Patient patient) {
+        if (patient.hasIdentifier() && !patient.getIdentifier().isEmpty()) {
+            if (patient.getIdentifierFirstRep().hasValue()) {
+                return patient.getIdentifierFirstRep().getValue();
+            }
+        }
+        return null;
+    }
+
+    private String extractPractitionerIdentifierValue(Practitioner practitioner) {
+        if (practitioner.hasIdentifier() && !practitioner.getIdentifier().isEmpty()) {
+            if (practitioner.getIdentifierFirstRep().hasValue()) {
+                return practitioner.getIdentifierFirstRep().getValue();
+            }
         }
         return null;
     }
