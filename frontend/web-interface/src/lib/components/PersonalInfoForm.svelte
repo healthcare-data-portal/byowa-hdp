@@ -1,8 +1,8 @@
 <script>
   import { createEventDispatcher } from 'svelte';
 
-  // Purely presentational; no API calls.
   export let editing = false;
+  export let personalInfo = null;
 
   const dispatch = createEventDispatcher();
 
@@ -16,6 +16,21 @@
     address: { street: '', city: '', state: '', zip: '', country: '' },
     emergency: { name: '', phone: '', relation: '' }
   };
+
+  // Populate form when personalInfo is loaded
+  $: if (personalInfo) {
+    form.fullName = personalInfo.fullName || '';
+    form.email = personalInfo.email || '';
+    form.phone = personalInfo.phoneNumber || '';
+    form.dob = personalInfo.dateOfBirth || '';
+    form.ssnMasked = personalInfo.socialSecurityNumber || '';
+    form.gender = personalInfo.gender || '';
+    form.address.street = personalInfo.streetAddress || '';
+    form.address.city = personalInfo.city || '';
+    form.address.state = personalInfo.state || '';
+    form.address.zip = personalInfo.zipCode || '';
+    form.address.country = personalInfo.country || '';
+  }
 
   // Keep a snapshot of the original values when entering edit mode
   let snapshot = null;
