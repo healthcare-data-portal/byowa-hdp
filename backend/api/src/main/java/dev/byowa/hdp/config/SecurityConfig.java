@@ -37,7 +37,6 @@ public class SecurityConfig {
         cfg.setAllowedOriginPatterns(List.of("http://localhost:*", "http://127.0.0.1:*"));
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         cfg.setAllowedHeaders(List.of("*"));
-        cfg.setExposedHeaders(List.of("Authorization"));
         cfg.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -48,24 +47,24 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**", "/api/auth/**", "/fhir/import", "/api/fhir/import")
-                        .permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/**")
-                        .permitAll()
+            .csrf(AbstractHttpConfigurer::disable)
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/auth/**", "/api/auth/**", "/fhir/import", "/api/fhir/import")
+                    .permitAll()
+                .requestMatchers(HttpMethod.OPTIONS, "/**")
+                    .permitAll()
 
-                        .requestMatchers("/providers/me")
-                        .hasAnyRole("DOCTOR", "ADMIN")
+                .requestMatchers("/providers/me")
+                    .hasAnyRole("DOCTOR", "ADMIN")
 
-                        .requestMatchers("/admin/**")
-                        .hasRole("ADMIN")
+                .requestMatchers("/admin/**")
+                    .hasRole("ADMIN")
 
-                        .anyRequest()
-                        .authenticated()
-                )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .anyRequest()
+                    .authenticated()
+            )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

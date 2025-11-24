@@ -6,6 +6,8 @@
   import MedicalRecords from '$lib/pages/MedicalRecords.svelte';
   import PrivacyConsent from '$lib/pages/PrivacyConsent.svelte';
 
+  export let personalInfo = null;
+
   let activeTab = 'personal';
   let isEdit = false;
 
@@ -73,7 +75,7 @@
     <section class="panel" aria-labelledby="personal-info">
       <h2 id="personal-info" style="margin:0 0 8px 0;">Personal Information</h2>
       <p class="muted">View and update your personal contact details and address</p>
-      <PersonalInfoForm editing={isEdit} on:save={handleSave} on:cancel={handleCancel} />
+      <PersonalInfoForm editing={isEdit} {personalInfo} on:save={handleSave} on:cancel={handleCancel} />
     </section>
   {:else if activeTab === 'medical'}
     <MedicalRecords />
