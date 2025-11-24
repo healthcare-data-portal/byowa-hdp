@@ -16,6 +16,10 @@ public class ProviderDto {
     private Integer careSiteId;
     private String initials;
 
+    // new fields
+    private Integer patientCount;
+    private Integer recordsCreated;
+
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
     public String getProviderName() { return providerName; }
@@ -44,4 +48,10 @@ public class ProviderDto {
     public void setCareSiteId(Integer careSiteId) { this.careSiteId = careSiteId; }
     public String getInitials() { return initials; }
     public void setInitials(String initials) { this.initials = initials; }
+
+    public Integer getPatientCount() { return patientCount; }
+    public void setPatientCount(Integer patientCount) { this.patientCount = patientCount; }
+
+    public Integer getRecordsCreated() { return recordsCreated; }
+    public void setRecordsCreated(Integer recordsCreated) { this.recordsCreated = recordsCreated; }
 }

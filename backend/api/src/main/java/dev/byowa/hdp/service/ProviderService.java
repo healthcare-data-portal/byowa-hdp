@@ -46,6 +46,22 @@ public class ProviderService {
             else if (parts[0].length() >= 2) initials += parts[0].charAt(1);
         }
         dto.setInitials(initials.toUpperCase());
+
+        // populate counts using repository native queries
+        try {
+            Integer pc = providerRepository.countPatientsAssigned(p.getId());
+            dto.setPatientCount(pc == null ? 0 : pc);
+        } catch (Exception e) {
+            dto.setPatientCount(0);
+        }
+
+        try {
+            Integer rc = providerRepository.countRecordsCreated(p.getId());
+            dto.setRecordsCreated(rc == null ? 0 : rc);
+        } catch (Exception e) {
+            dto.setRecordsCreated(0);
+        }
+
         return dto;
     }
 }
