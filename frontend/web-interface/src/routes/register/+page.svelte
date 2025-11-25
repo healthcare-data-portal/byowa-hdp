@@ -3,13 +3,17 @@
     import { goto } from '$app/navigation';
 
     async function handleSubmit(e) {
-        const { email, password } = e.detail;
+        const { email, password, name } = e.detail;
 
         try {
             const r = await fetch('http://localhost:8080/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: email, password })
+                body: JSON.stringify({
+                    username: email,
+                    password,
+                    fullName: name
+                })
             });
 
             if (r.ok) {
@@ -18,13 +22,15 @@
             }
 
             let msg = 'Registration failed';
+
             try {
                 const data = await r.json();
                 msg = data?.message || msg;
-            } catch {  }
+            } catch (err) {
+            }
 
             alert(msg);
-        } catch {
+        } catch (err) {
             alert('Network error');
         }
     }

@@ -1,14 +1,18 @@
 package dev.byowa.hdp.dto;
 
 public class RegisterRequest {
+
     private String username;
     private String password;
+    private String fullName;
 
-    public RegisterRequest() {}
+    public RegisterRequest() {
+    }
 
-    public RegisterRequest(String username, String password) {
+    public RegisterRequest(String username, String password, String fullName) {
         this.username = username;
         this.password = password;
+        this.fullName = fullName;
     }
 
     public String getUsername() {
@@ -25,5 +29,13 @@ public class RegisterRequest {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
     }
 }

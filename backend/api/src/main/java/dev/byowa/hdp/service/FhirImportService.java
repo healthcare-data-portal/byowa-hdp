@@ -133,6 +133,7 @@ public class FhirImportService {
             String hashed = passwordEncoder.encode(identifier);
             User user = new User(username, hashed);
             user.setPerson(person);
+            user.setRole(Role.PATIENT);
             userRepository.save(user);
         }
 

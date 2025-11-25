@@ -1,7 +1,8 @@
 package dev.byowa.hdp.model;
 
-public enum Role {
-    ADMIN,
+public enum Role{
     PATIENT,
-    DOCTOR
+    DOCTOR,
+    ADMIN
 }
+

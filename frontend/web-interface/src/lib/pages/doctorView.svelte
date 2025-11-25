@@ -320,24 +320,13 @@
 
         <section class="panel" style="margin-top:12px;">
             <h2 style="margin:0 0 6px 0;">Doctor details</h2>
-            <p class="muted" style="margin:0 0 8px 0;">
-                Loaded provider with id {provider.id}
-            </p>
 
             <div class="table-wrap">
                 <table class="table">
                     <tbody>
                     <tr>
-                        <th>Provider ID</th>
-                        <td>{provider.id}</td>
-                    </tr>
-                    <tr>
                         <th>Name</th>
                         <td>{provider.providerName}</td>
-                    </tr>
-                    <tr>
-                        <th>Source value</th>
-                        <td>{provider.providerSourceValue}</td>
                     </tr>
                     <tr>
                         <th>Specialty concept</th>
