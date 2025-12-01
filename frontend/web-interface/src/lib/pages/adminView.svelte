@@ -13,6 +13,11 @@
     let filter = '';
     let savingIds = new Set();
 
+    let selectedPatientId = '';
+    let selectedDoctorId = '';
+    let assigning = false;
+    let assignMessage = '';
+
     function authHeaders() {
         const token = localStorage.getItem('token');
         return {
@@ -39,38 +44,84 @@
         }
     }
 
-    async function handleSave(e) {
-        const { id, role } = e.detail;
-        savingIds.add(id);
-        savingIds = new Set(savingIds);
+    async function handleSave(event) {
+        const { id, role } = event.detail || {};
+        if (!id || !role) return;
+
+        const next = new Set(savingIds);
+        next.add(id);
+        savingIds = next;
 
         try {
-            const res = await fetch(`${API}/admin/users/${id}/role`, {
-                method: 'PUT',
+            const res = await fetch(`${API}/admin/role`, {
+                method: 'POST',
                 headers: authHeaders(),
-                body: JSON.stringify({ role })
+                body: JSON.stringify({ userId: id, role })
             });
 
             if (!res.ok) {
-                throw new Error((await res.text()) || `Failed to update role (${res.status})`);
+                const text = await res.text();
+                throw new Error(text || 'Failed to update role');
             }
 
-            await loadUsers();
-        } catch (err) {
-            alert(err.message || 'Update failed');
+            users = users.map((u) => (u.id === id ? { ...u, role } : u));
+        } catch (e) {
+            error = e.message || 'Failed to update user role';
         } finally {
-            savingIds.delete(id);
-            savingIds = new Set(savingIds);
+            const after = new Set(savingIds);
+            after.delete(id);
+            savingIds = after;
         }
     }
 
-    $: filtered = users.filter(
-        u => !filter || u.username.toLowerCase().includes(filter.toLowerCase())
-    );
+    async function assignPatient() {
+        assignMessage = '';
+        if (!selectedPatientId || !selectedDoctorId) {
+            assignMessage = 'Select both patient and doctor';
+            return;
+        }
+
+        assigning = true;
+        try {
+            const res = await fetch(`${API}/admin/assignments`, {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify({
+                    patientId: Number(selectedPatientId),
+                    doctorId: Number(selectedDoctorId)
+                })
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || 'Failed to assign');
+            }
+
+            assignMessage = 'Patient assigned to doctor successfully';
+        } catch (e) {
+            assignMessage = e.message || 'Failed to assign';
+        } finally {
+            assigning = false;
+        }
+    }
+
+    onMount(() => {
+        loadUsers();
+    });
+
+    $: patients = users.filter((u) => u.role === 'PATIENT');
+    $: doctors = users.filter((u) => u.role === 'DOCTOR');
 
     $: totalUsers = users.length;
 
-    onMount(loadUsers);
+    $: filtered = users.filter((u) => {
+        if (!filter) return true;
+        const q = filter.toLowerCase();
+        const email = (u.email || u.username || '').toLowerCase();
+        const role = (u.role || '').toLowerCase();
+        const idStr = String(u.id || '');
+        return email.includes(q) || role.includes(q) || idStr.includes(q);
+    });
 </script>
 
 <Header role="admin" roleIcon="/src/lib/assets/pictures/white_shield.png" />
@@ -79,7 +130,6 @@
     <div class="h1">Admin Dashboard</div>
     <div class="sub">Manage users, roles, and system settings</div>
 
-    <!-- Stats row -->
     <div class="row">
         <div class="card">
             <div class="stat-title">
@@ -178,6 +228,74 @@
     </div>
 
     <div class="section">
+        <div class="assign-header">
+            <div>
+                <div class="title">Assign Patients to Doctors</div>
+                <div class="desc">
+                    Link patient accounts to doctor accounts. Only users with the
+                    correct roles are shown.
+                </div>
+            </div>
+            <div class="assign-stats">
+                <span class="pill">
+                    Patients: {patients.length}
+                </span>
+                <span class="pill">
+                    Doctors: {doctors.length}
+                </span>
+            </div>
+        </div>
+
+        <div
+                class="assign-row"
+                style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;align-items:flex-end;margin-top:1rem;"
+        >
+            <div>
+                <div class="field-label">Patient</div>
+                <select class="input" bind:value={selectedPatientId}>
+                    <option value="">Select patient</option>
+                    {#each patients as p}
+                        <option value={p.id}>
+                            {(p.email || p.username) ?? 'User'} (#{p.id})
+                        </option>
+                    {/each}
+                </select>
+            </div>
+
+            <div>
+                <div class="field-label">Doctor</div>
+                <select class="input" bind:value={selectedDoctorId}>
+                    <option value="">Select doctor</option>
+                    {#each doctors as d}
+                        <option value={d.id}>
+                            {(d.email || d.username) ?? 'User'} (#{d.id})
+                        </option>
+                    {/each}
+                </select>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                <button
+                        class="btn primary"
+                        disabled={assigning}
+                        on:click={assignPatient}
+                >
+                    {assigning ? 'Assigning…' : 'Assign'}
+                </button>
+
+                {#if assignMessage}
+                    <div
+                            class="assign-message"
+                            style="font-size:0.875rem;color:#111827;"
+                    >
+                        {assignMessage}
+                    </div>
+                {/if}
+            </div>
+        </div>
+    </div>
+
+    <div class="section">
         <div class="title">FHIR Message Processing</div>
         <div class="desc">Monitor FHIR to OMOP data conversion status</div>
 
@@ -193,8 +311,7 @@
                     <th class="th">OMOP Mapped</th>
                 </tr>
                 </thead>
-                <tbody>
-                </tbody>
+                <tbody></tbody>
             </table>
         </div>
 

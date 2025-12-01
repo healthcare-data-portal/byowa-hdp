@@ -10,9 +10,8 @@
     let activeTab = 'patients';
     let isEdit = false;
 
-
     let showUploadDialog = false;
-    let uploadStatus = 'idle'; // 'idle' | 'processing' | 'success' | 'error'
+    let uploadStatus = 'idle';
     let uploadResult = null;
 
     const toggleEdit = () => (isEdit = !isEdit);
@@ -24,8 +23,8 @@
     let patients = [];
     let records = [];
 
-    $: patientCount = provider?.patientCount ?? patients.length;
-    $: recordsCount = provider?.recordsCreated ?? records.length;
+    $: patientCount = patients.length || provider?.patientCount || 0;
+    $: recordsCount = records.length || provider?.recordsCreated || 0;
 
     function formatDate(d) {
         if (!d) return '—';
@@ -119,7 +118,8 @@
                 id: `record-${Date.now()}`,
                 patientId,
                 patientName:
-                    patients.find((p) => p.id === patientId)?.name || patientId,
+                    patients.find((p) => String(p.id) === String(patientId))?.name ||
+                    patientId,
                 date: new Date().toISOString(),
                 type: recordType,
                 title:
@@ -149,7 +149,6 @@
                 } and converted to OMOP`
             };
         } catch (err) {
-            console.error('Error processing FHIR file:', err);
             uploadStatus = 'error';
             uploadResult = {
                 message: 'Failed to process FHIR file. Check format and try again.'
@@ -199,7 +198,12 @@
             const res = await authFetch(`${API_BASE}/providers/${id}/patients`);
             if (!res.ok) return;
             const data = await res.json();
-            if (Array.isArray(data)) patients = data;
+            if (Array.isArray(data)) {
+                patients = data;
+                if (provider) {
+                    provider = { ...provider, patientCount: data.length };
+                }
+            }
         } catch {
         }
     }
@@ -209,7 +213,12 @@
             const res = await authFetch(`${API_BASE}/providers/${id}/records`);
             if (!res.ok) return;
             const data = await res.json();
-            if (Array.isArray(data)) records = data;
+            if (Array.isArray(data)) {
+                records = data;
+                if (provider) {
+                    provider = { ...provider, recordsCreated: data.length };
+                }
+            }
         } catch {
         }
     }
@@ -218,12 +227,8 @@
         await fetchProvider();
 
         if (provider?.id) {
-            if ((provider.patientCount ?? 0) > 0) {
-                await tryFetchPatients(provider.id);
-            }
-            if ((provider.recordsCreated ?? 0) > 0) {
-                await tryFetchRecords(provider.id);
-            }
+            await tryFetchPatients(provider.id);
+            await tryFetchRecords(provider.id);
         }
     });
 </script>
@@ -282,8 +287,8 @@
         <Tabs
                 bind:activeTab
                 items={[
-                { id: 'patients', label: `Patient Management (${patientCount ?? 0})` },
-                { id: 'records', label: `Medical Records (${recordsCount ?? 0})` }
+                { id: 'patients', label: `Patient Management (${patientCount})` },
+                { id: 'records', label: `Medical Records (${recordsCount})` }
             ]}
         />
     </nav>
@@ -338,11 +343,11 @@
                     </tr>
                     <tr>
                         <th>Patients (count)</th>
-                        <td>{provider.patientCount}</td>
+                        <td>{patientCount}</td>
                     </tr>
                     <tr>
                         <th>Records created</th>
-                        <td>{provider.recordsCreated}</td>
+                        <td>{recordsCount}</td>
                     </tr>
                     </tbody>
                 </table>
@@ -371,12 +376,7 @@
                     {#if patients.length === 0}
                         <tr>
                             <td colspan="6" class="muted">
-                                {#if provider && patientCount > 0}
-                                    Provider has {patientCount} patients — patient list endpoint
-                                    not available.
-                                {:else}
-                                    No patients to display yet.
-                                {/if}
+                                No patients to display yet.
                             </td>
                         </tr>
                     {:else}
@@ -442,12 +442,7 @@
                     {#if records.length === 0}
                         <tr>
                             <td colspan="6" class="muted">
-                                {#if provider && recordsCount > 0}
-                                    Provider created {recordsCount} records — records list
-                                    endpoint not available.
-                                {:else}
-                                    No records to display yet.
-                                {/if}
+                                No records to display yet.
                             </td>
                         </tr>
                     {:else}
@@ -462,7 +457,8 @@
                                 <td data-label="Status">
                                         <span
                                                 class="chip"
-                                                data-variant={r.status?.toLowerCase() === 'active'
+                                                data-variant={r.status?.toLowerCase() ===
+                                            'active'
                                                 ? 'active'
                                                 : 'closed'}
                                         >

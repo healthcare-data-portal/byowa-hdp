@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import dev.byowa.hdp.service.PatientDoctorAssignmentService;
 
 import java.util.Optional;
 
@@ -17,11 +18,14 @@ public class ProviderService {
 
     private final ProviderRepository providerRepository;
     private final UserRepository userRepository;
+    private final PatientDoctorAssignmentService assignmentService;
 
     public ProviderService(ProviderRepository providerRepository,
-                           UserRepository userRepository) {
+                           UserRepository userRepository,
+                           PatientDoctorAssignmentService assignmentService) {
         this.providerRepository = providerRepository;
         this.userRepository = userRepository;
+        this.assignmentService = assignmentService;
     }
 
     @Transactional(readOnly = true)
@@ -67,8 +71,20 @@ public class ProviderService {
                     return providerRepository.save(p);
                 });
 
-        return Optional.of(toDto(provider));
+        ProviderDto dto = toDto(provider);
+
+        if (user != null) {
+            long count = assignmentService.countPatientsForDoctor(user);
+            dto.setPatientCount((int) count);
+        } else {
+            dto.setPatientCount(0);
+        }
+
+        dto.setRecordsCreated(0);
+
+        return Optional.of(dto);
     }
+
 
     private ProviderDto toDto(Provider p) {
         ProviderDto dto = new ProviderDto();
@@ -111,7 +127,6 @@ public class ProviderService {
         }
         dto.setInitials(initials.toUpperCase());
 
-        dto.setPatientCount(0);
         dto.setRecordsCreated(0);
 
         return dto;

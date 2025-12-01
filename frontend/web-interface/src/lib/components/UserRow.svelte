@@ -1,40 +1,66 @@
 <script>
     import { createEventDispatcher } from 'svelte';
+
     export let user;
     export let roles = [];
     export let saving = false;
 
-    let selected = user.role;
     const dispatch = createEventDispatcher();
 
-    $: dirty = selected !== user.role;
+    let selectedRole = user?.role ?? '';
 
-    function save() {
-        if (!dirty || saving) return;
-        dispatch('save', { id: user.id, role: selected });
-    }
-
-    function reset() {
-        selected = user.role;
+    function handleSaveClick() {
+        if (!user?.id || !selectedRole) return;
+        dispatch('save', { id: user.id, role: selectedRole });
     }
 </script>
 
-<tr class="tr">
-    <td>{user.id}</td>
-    <td>{user.username}</td>
-    <td>
-        <select class="input" bind:value={selected}>
+<tr class="table-row">
+    <td class="td td-id">
+        {user.id}
+    </td>
+
+    <td class="td td-email">
+        {user.email ?? user.username}
+    </td>
+
+    <td class="td td-role">
+        <select
+                class="input select-role"
+                bind:value={selectedRole}
+        >
             {#each roles as r}
                 <option value={r}>{r}</option>
             {/each}
         </select>
     </td>
-    <td style="display:flex;gap:.5rem;align-items:center;">
-        <button class="btn primary" disabled={!dirty || saving} on:click={save}>
+
+    <td class="td td-actions">
+        <button class="btn primary" disabled={saving} on:click={handleSaveClick}>
             {saving ? 'Saving…' : 'Save role'}
         </button>
-        {#if dirty}
-            <button class="btn ghost" on:click={reset}>Reset</button>
-        {/if}
     </td>
 </tr>
+
+<style>
+    .td-id {
+        width: 70px;
+        font-variant-numeric: tabular-nums;
+    }
+    .td-email {
+        max-width: 260px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .td-role {
+        width: 160px;
+    }
+    .td-actions {
+        width: 130px;
+        text-align: right;
+    }
+    .select-role {
+        width: 100%;
+    }
+</style>
