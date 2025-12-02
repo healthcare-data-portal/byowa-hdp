@@ -1,12 +1,13 @@
-// dev.byowa.hdp.controller.AdminController.java
 package dev.byowa.hdp.controller;
 
+import dev.byowa.hdp.dto.AssignPatientRequest;
 import dev.byowa.hdp.dto.UpdateRoleRequest;
 import dev.byowa.hdp.dto.UserSummary;
 import dev.byowa.hdp.model.Role;
 import dev.byowa.hdp.model.User;
 import dev.byowa.hdp.repository.UserRepository;
 import dev.byowa.hdp.service.JwtService;
+import dev.byowa.hdp.service.PatientDoctorAssignmentService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,52 +20,88 @@ public class AdminController {
 
     private final UserRepository userRepository;
     private final JwtService jwtService;
+    private final PatientDoctorAssignmentService assignmentService;
 
-    public AdminController(UserRepository userRepository, JwtService jwtService) {
+    public AdminController(UserRepository userRepository,
+                           JwtService jwtService,
+                           PatientDoctorAssignmentService assignmentService) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
-    }
-
-    private boolean isAdmin(HttpServletRequest req) {
-        String auth = req.getHeader("Authorization");
-        if (auth == null || !auth.startsWith("Bearer ")) return false;
-        String token = auth.substring(7);
-        try {
-            return "ADMIN".equalsIgnoreCase(jwtService.extractRole(token)) && !jwtService.isExpired(token);
-        } catch (Exception e) {
-            return false;
-        }
+        this.assignmentService = assignmentService;
     }
 
     @GetMapping("/users")
-    public ResponseEntity<?> listUsers(HttpServletRequest req) {
-        if (!isAdmin(req)) return ResponseEntity.status(403).body("Forbidden");
-        List<UserSummary> users = userRepository.findAll()
+    public ResponseEntity<List<UserSummary>> listUsers(HttpServletRequest req) {
+        if (!isAdmin(req)) {
+            return ResponseEntity.status(403).build();
+        }
+
+        List<UserSummary> result = userRepository.findAll()
                 .stream()
-                .map(u -> new UserSummary(u.getId(), u.getUsername(), u.getRole().name()))
+                .map(UserSummary::from)
                 .toList();
-        return ResponseEntity.ok(users);
+
+        return ResponseEntity.ok(result);
     }
 
-    @PutMapping("/users/{id}/role")
-    public ResponseEntity<?> changeRole(@PathVariable Long id,
-                                        @RequestBody UpdateRoleRequest body,
+    @PostMapping("/role")
+    public ResponseEntity<?> changeRole(@RequestBody UpdateRoleRequest request,
                                         HttpServletRequest req) {
-        if (!isAdmin(req)) return ResponseEntity.status(403).body("Forbidden");
+        if (!isAdmin(req)) {
+            return ResponseEntity.status(403).body("Forbidden");
+        }
 
-        String newRoleRaw = body.getRole();
-        if (newRoleRaw == null) return ResponseEntity.badRequest().body("role is required");
+        if (request.getUserId() == null || request.getRole() == null) {
+            return ResponseEntity.badRequest().body("userId and role are required");
+        }
 
-        Role newRole;
-        try { newRole = Role.valueOf(newRoleRaw.toUpperCase()); }
-        catch (IllegalArgumentException ex) { return ResponseEntity.badRequest().body("Invalid role"); }
+        User user = userRepository.findById(request.getUserId()).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(404).body("User not found");
+        }
 
-        return userRepository.findById(id)
-                .map(u -> {
-                    u.setRole(newRole);
-                    userRepository.save(u);
-                    return ResponseEntity.ok(new UserSummary(u.getId(), u.getUsername(), u.getRole().name()));
-                })
-                .orElse(ResponseEntity.notFound().build());
+        try {
+            Role newRole = Role.valueOf(request.getRole());
+            user.setRole(newRole);
+            userRepository.save(user);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body("Invalid role: " + request.getRole());
+        }
+    }
+
+    @PostMapping("/assignments")
+    public ResponseEntity<?> assignPatient(@RequestBody AssignPatientRequest body,
+                                           HttpServletRequest req) {
+        if (!isAdmin(req)) {
+            return ResponseEntity.status(403).body("Forbidden");
+        }
+
+        if (body.getPatientId() == null || body.getDoctorId() == null) {
+            return ResponseEntity.badRequest().body("patientId and doctorId are required");
+        }
+
+        try {
+            assignmentService.assignPatientToDoctor(body.getPatientId(), body.getDoctorId());
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.badRequest().body(ex.getMessage());
+        }
+    }
+
+    private boolean isAdmin(HttpServletRequest req) {
+        String authHeader = req.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return false;
+        }
+
+        String token = authHeader.substring(7);
+        String username = jwtService.extractUsername(token);
+        if (username == null) {
+            return false;
+        }
+
+        User user = userRepository.findByUsername(username).orElse(null);
+        return user != null && user.getRole() == Role.ADMIN;
     }
 }
