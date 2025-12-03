@@ -138,27 +138,43 @@
                 formats: ['FHIR', 'OMOP']
             };
 
+            // Füge lokal erstellten Record zur UI hinzu
             records = [newRecord, ...records];
+
+            // Sende die FHIR-Nutzlast an das Backend-Import-Endpoint
+            const endpoint = `${API_BASE.replace(/\/$/, '')}/fhir/import`;
+            const res = await authFetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(fhirData)
+            });
+
+            if (!res.ok) {
+                const errText = await res.text().catch(() => null);
+                throw new Error(errText || `Import failed (${res.status})`);
+            }
+
+            const serverMsg = await res.text().catch(() => 'Import successful');
 
             uploadStatus = 'success';
             uploadResult = {
                 patientId,
                 recordType,
-                message: `Processed ${
-                    fhirData.resourceType || 'FHIR'
-                } and converted to OMOP`
+                message: `Processed ${fhirData.resourceType || 'FHIR'} and converted to OMOP. Server: ${serverMsg}`
             };
         } catch (err) {
             uploadStatus = 'error';
             uploadResult = {
-                message: 'Failed to process FHIR file. Check format and try again.'
+                message: err?.message || 'Failed to process FHIR file. Check format and try again.'
             };
         }
 
         event.target.value = '';
     }
 
-    function closeUploadDialog() {
+    async function closeUploadDialog() {
         showUploadDialog = false;
         uploadStatus = 'idle';
         uploadResult = null;
