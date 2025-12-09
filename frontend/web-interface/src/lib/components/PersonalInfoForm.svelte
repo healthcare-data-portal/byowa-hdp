@@ -61,12 +61,12 @@
   <!-- Left column -->
   <div class="field">
     <label for="fullName">Full Name</label>
-    <input id="fullName" class="input" bind:value={form.fullName} autocomplete="name" disabled={!editing} />
+    <input id="fullName" class="input" class:locked={editing} bind:value={form.fullName} autocomplete="name" disabled />
   </div>
 
   <div class="field">
     <label for="email">Email Address</label>
-    <input id="email" class="input" type="email" bind:value={form.email} autocomplete="email" disabled={!editing} />
+    <input id="email" class="input" class:locked={editing} type="email" bind:value={form.email} autocomplete="email" disabled />
   </div>
 
   <div class="field">
@@ -76,19 +76,19 @@
 
   <div class="field">
     <label for="dob">Date of Birth</label>
-    <input id="dob" class="input" type="date" bind:value={form.dob} disabled={!editing} />
-    <div class="muted">Date of birth cannot be changed</div>
+    <input id="dob" class="input" class:locked={editing} type="date" bind:value={form.dob} disabled />
+    <div class="muted">Date of birth is read-only</div>
   </div>
 
   <div class="field">
     <label for="ssn">Social Security Number</label>
-    <input id="ssn" class="input" bind:value={form.ssnMasked} aria-describedby="ssn-help" placeholder="***-**-1234" disabled={!editing} />
-    <div id="ssn-help" class="muted">Enter your full SSN or update masked version</div>
+    <input id="ssn" class="input" class:locked={editing} bind:value={form.ssnMasked} aria-describedby="ssn-help" placeholder="***-**-1234" disabled />
+    <div id="ssn-help" class="muted">SSN is locked for security</div>
   </div>
 
   <div class="field">
     <label for="gender">Gender</label>
-    <input id="gender" class="input" bind:value={form.gender} disabled={!editing} />
+    <input id="gender" class="input" class:locked={editing} bind:value={form.gender} disabled />
   </div>
 
   <div class="divider grid-2" style="grid-column: 1/-1;"></div>
@@ -155,3 +155,12 @@
     </div>
   {/if}
 </form>
+
+  <style>
+    .locked {
+      background: #e4e7ec;
+      color: #3a3d45;
+      border-color: #c4c7cc;
+      cursor: not-allowed;
+    }
+  </style>
