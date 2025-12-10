@@ -31,8 +31,69 @@ export function getRoleFromToken(token: string): Role {
 }
 
 export function pathForRole(r: Role) {
-	if (r === 'ADMIN') return '/admin';
-	if (r === 'DOCTOR') return '/doctor';
-	if (r === 'PATIENT') return '/patient';
-	return '/login';
+    if (r === 'ADMIN') return '/admin';
+    if (r === 'DOCTOR') return '/doctor';
+    if (r === 'PATIENT') return '/patient';
+    return '/login';
+}
+
+// --- Helpers to extract user info (email/name) from JWT ---
+export type JwtPayload = Record<string, any> | null;
+
+export function parseJwtPayload(token: string): JwtPayload {
+    try {
+        const payloadRaw = token.split('.')[1] ?? '';
+        const json = b64urlDecode(payloadRaw);
+        if (!json) return null;
+        return JSON.parse(json);
+    } catch {
+        return null;
+    }
+}
+
+export function getEmailFromToken(token: string): string {
+    const p = parseJwtPayload(token);
+    // Spring JWT sets subject (sub) to username (we use email as username)
+    return (
+        (p?.sub as string) ||
+        (p?.email as string) ||
+        (p?.username as string) ||
+        ''
+    );
+}
+
+function capitalizeWord(s: string) {
+    if (!s) return s;
+    return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+
+function nameFromEmail(email: string): string {
+    if (!email) return '';
+    const local = email.split('@')[0] || '';
+    // Split by common separators and numbers
+    const parts = local
+        .replace(/[^a-zA-Z]+/g, ' ')
+        .split(' ')
+        .filter(Boolean)
+        .slice(0, 3);
+    if (!parts.length) return '';
+    return parts.map(capitalizeWord).join(' ');
+}
+
+export function getDisplayNameFromToken(token: string): string {
+    const p = parseJwtPayload(token);
+    const given = (p?.given_name as string) || (p?.firstName as string);
+    const family = (p?.family_name as string) || (p?.lastName as string);
+    const full =
+        (p?.name as string) ||
+        (p?.fullName as string) ||
+        (given && family ? `${given} ${family}` : given || family || '');
+    if (full && full.trim()) return full.trim();
+    return nameFromEmail(getEmailFromToken(token));
+}
+
+export function getUserInfoFromToken(token: string): { name: string; email: string } {
+    const email = getEmailFromToken(token);
+    const name = getDisplayNameFromToken(token);
+    return { name, email };
 }

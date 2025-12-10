@@ -1,6 +1,8 @@
 <script>
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
+  import { onMount } from 'svelte';
+  import { getUserInfoFromToken } from '$lib/auth';
 
   // Props (empty by default; you’ll wire real values later)
   export let role = '';        // 'admin' | 'doctor' | 'patient' (optional; auto-detects if empty)
@@ -11,9 +13,9 @@
   // Auto-detect role from URL if not provided: adminView / doctorView / patientView
   $: detected = (() => {
     const p = $page?.url?.pathname?.toLowerCase() || '';
-    if (p.includes('adminview')) return 'admin';
-    if (p.includes('doctorview')) return 'doctor';
-    if (p.includes('patientview')) return 'patient';
+    if (p.includes('adminview') || p.includes('/admin')) return 'admin';
+    if (p.includes('doctorview') || p.includes('/doctor')) return 'doctor';
+    if (p.includes('patientview') || p.includes('/patient')) return 'patient';
     return '';
   })();
   $: finalRole = (role || detected || '');
@@ -33,6 +35,18 @@
   }
 
   $: roleLabel = finalRole ? finalRole[0].toUpperCase() + finalRole.slice(1) : '';
+
+  // Auto-fill name/email from JWT if not provided via props
+  onMount(() => {
+    try {
+      const token = localStorage.getItem('token');
+      if (token && (!name || !email)) {
+        const info = getUserInfoFromToken(token);
+        if (!name && info.name) name = info.name;
+        if (!email && info.email) email = info.email;
+      }
+    } catch {}
+  });
 </script>
 
 <header class="topbar">
