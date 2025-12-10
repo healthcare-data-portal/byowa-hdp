@@ -564,8 +564,8 @@
                                 text-align:center;
                             "
                         >
-                            <div style="font-size:1.5rem;margin-bottom:0.5rem;">
-                                📤
+                            <div style="margin-bottom:0.5rem;">
+                                <img src="/src/lib/assets/pictures/download-black.png" alt="Upload" style="width:48px;height:48px;" />
                             </div>
                             <div style="font-weight:600;">
                                 Click to upload FHIR file

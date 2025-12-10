@@ -14,6 +14,11 @@
   const toggleEdit = () => (isEdit = !isEdit);
   const handleSave = () => (isEdit = false);
   const handleCancel = () => (isEdit = false);
+  const handleExport = () => {
+    if (typeof window !== 'undefined') {
+      window.print();
+    }
+  };
 </script>
 
 <!-- Header: patient pill (dark), white text; point to your patient icon -->
@@ -28,7 +33,7 @@
         <p class="muted" style="margin:0;">View and manage your personal health information</p>
       </div>
       <div style="display:flex; gap:8px;">
-        <button class="btn ghost" aria-label="Export PDF">
+        <button class="btn ghost" aria-label="Export PDF" on:click={handleExport}>
           <img src="/src/lib/assets/pictures/file-export.png" alt="icon" class="icon" width="12" height="12" />
           Export PDF
         </button>
@@ -74,7 +79,7 @@
   {#if activeTab === 'personal'}
     <section class="panel" aria-labelledby="personal-info">
       <h2 id="personal-info" style="margin:0 0 8px 0;">Personal Information</h2>
-      <p class="muted">View and update your personal contact details and address</p>
+        <p class="muted">You can edit your phone, address, and emergency contact details; core identity fields stay read-only.</p>
       <PersonalInfoForm editing={isEdit} {personalInfo} on:save={handleSave} on:cancel={handleCancel} />
     </section>
   {:else if activeTab === 'medical'}
