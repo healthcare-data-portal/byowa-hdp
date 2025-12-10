@@ -1,0 +1,19 @@
+{
+  "resourceType": "Practitioner",
+  "id": "practitioner-with-bd",
+  "identifier": [
+    {
+      "system": "http://hospital.smarthealth.org/empid",
+      "value": "PR-BD-2002"
+    }
+  ],
+  "name": [
+    {
+      "use": "official",
+      "family": "Cuddy",
+      "given": ["Lisa"]
+    }
+  ],
+  "gender": "female",
+  "birthDate": "1973-01-01"
+}

@@ -1,0 +1,18 @@
+{
+  "resourceType": "Practitioner",
+  "id": "practitioner-example",
+  "identifier": [
+    {
+      "system": "http://hospital.smarthealth.org/empid",
+      "value": "PR-EX-1001"
+    }
+  ],
+  "name": [
+    {
+      "use": "official",
+      "family": "House",
+      "given": ["Gregory"]
+    }
+  ],
+  "gender": "male"
+}
