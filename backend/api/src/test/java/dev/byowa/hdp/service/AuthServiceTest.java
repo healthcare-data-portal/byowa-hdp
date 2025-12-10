@@ -42,7 +42,7 @@ class AuthServiceTest {
 
     @Test
     void register_success_createsUserAndReturnsToken() {
-        RegisterRequest req = new RegisterRequest("alice", "pw");
+        RegisterRequest req = new RegisterRequest("alice", "pw", "Alice Doe");
         when(userRepository.existsByUsername("alice")).thenReturn(false);
         when(passwordEncoder.encode("pw")).thenReturn("hashed");
         when(jwtService.generateToken("alice", Role.PATIENT.name())).thenReturn("token-123");
@@ -62,7 +62,7 @@ class AuthServiceTest {
 
     @Test
     void register_invokesJwtWithUsernameAndRole() {
-        RegisterRequest req = new RegisterRequest("carol", "secret");
+        RegisterRequest req = new RegisterRequest("carol", "secret", "Carol Smith");
         when(userRepository.existsByUsername("carol")).thenReturn(false);
         when(passwordEncoder.encode("secret")).thenReturn("enc");
         when(jwtService.generateToken("carol", Role.PATIENT.name())).thenReturn("tkn");
@@ -76,7 +76,7 @@ class AuthServiceTest {
 
     @Test
     void register_duplicateUsername_throws() {
-        RegisterRequest req = new RegisterRequest("existing", "pw");
+        RegisterRequest req = new RegisterRequest("existing", "pw", "Existing User");
         when(userRepository.existsByUsername("existing")).thenReturn(true);
 
         RuntimeException ex = assertThrows(RuntimeException.class, () -> authService.register(req));
