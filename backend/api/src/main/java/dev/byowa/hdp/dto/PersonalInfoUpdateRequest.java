@@ -1,46 +1,21 @@
 package dev.byowa.hdp.dto;
 
-public class PersonalInfoResponse {
-    // Personal Information
-    private String fullName;
-    private String email;
+public class PersonalInfoUpdateRequest {
+    // Editable fields only
     private String phoneNumber;
-    private String dateOfBirth;
-    private String socialSecurityNumber;
-    private String gender;
 
-    // Address Information
     private String streetAddress;
     private String city;
     private String state;
     private String zipCode;
     private String country;
 
-    // Emergency Contact
     private String emergencyContactName;
     private String emergencyContactPhone;
     private String emergencyContactRelation;
 
-    // Getters and Setters
-    public String getFullName() { return fullName; }
-    public void setFullName(String fullName) { this.fullName = fullName; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
-
-    public String getDateOfBirth() { return dateOfBirth; }
-    public void setDateOfBirth(String dateOfBirth) { this.dateOfBirth = dateOfBirth; }
-
-    public String getSocialSecurityNumber() { return socialSecurityNumber; }
-    public void setSocialSecurityNumber(String socialSecurityNumber) { 
-        this.socialSecurityNumber = socialSecurityNumber; 
-    }
-
-    public String getGender() { return gender; }
-    public void setGender(String gender) { this.gender = gender; }
 
     public String getStreetAddress() { return streetAddress; }
     public void setStreetAddress(String streetAddress) { this.streetAddress = streetAddress; }

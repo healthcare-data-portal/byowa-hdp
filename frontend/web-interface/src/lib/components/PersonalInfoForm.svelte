@@ -30,6 +30,10 @@
     form.address.state = personalInfo.state || '';
     form.address.zip = personalInfo.zipCode || '';
     form.address.country = personalInfo.country || '';
+    // Emergency contact fields
+    form.emergency.name = personalInfo.emergencyContactName || '';
+    form.emergency.phone = personalInfo.emergencyContactPhone || '';
+    form.emergency.relation = personalInfo.emergencyContactRelation || '';
   }
 
   // Keep a snapshot of the original values when entering edit mode

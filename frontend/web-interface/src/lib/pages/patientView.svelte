@@ -12,7 +12,52 @@
   let isEdit = false;
 
   const toggleEdit = () => (isEdit = !isEdit);
-  const handleSave = () => (isEdit = false);
+  async function handleSave(e) {
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+    if (!token) {
+      alert('Not authenticated');
+      isEdit = false;
+      return;
+    }
+
+    const { form } = e.detail || {};
+    const payload = {
+      phoneNumber: form?.phone ?? '',
+      streetAddress: form?.address?.street ?? '',
+      city: form?.address?.city ?? '',
+      state: form?.address?.state ?? '',
+      zipCode: form?.address?.zip ?? '',
+      country: form?.address?.country ?? '',
+      emergencyContactName: form?.emergency?.name ?? '',
+      emergencyContactPhone: form?.emergency?.phone ?? '',
+      emergencyContactRelation: form?.emergency?.relation ?? ''
+    };
+
+    try {
+      const res = await fetch('http://localhost:8080/api/personal-info', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      let data = null;
+      try { data = await res.json(); } catch {}
+
+      if (res.ok && data) {
+        // Update local view model so UI reflects saved values
+        personalInfo = data;
+        isEdit = false;
+      } else {
+        const msg = typeof data === 'string' ? data : (data?.message || 'Failed to save changes');
+        alert(msg);
+      }
+    } catch (err) {
+      alert('Network error while saving');
+    }
+  }
   const handleCancel = () => (isEdit = false);
   const handleExport = () => {
     if (typeof window !== 'undefined') {
