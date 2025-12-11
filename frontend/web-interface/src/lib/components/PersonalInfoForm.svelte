@@ -142,10 +142,6 @@
     <input id="ec-phone" class="input" type="tel" bind:value={form.emergency.phone} disabled={!editing} />
   </div>
 
-  <div class="field">
-    <label for="ec-rel">Relationship</label>
-    <input id="ec-rel" class="input" bind:value={form.emergency.relation} disabled={!editing} />
-  </div>
 
   {#if editing}
     <div class="actionbar" style="grid-column: 1/-1;">

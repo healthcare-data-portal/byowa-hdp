@@ -68,8 +68,42 @@ public class FhirPatientMapper {
             pn.setGivenName(blankToNull(givenCombined));
             pn.setEmail(blankToNull(email));
             pn.setTelephone(blankToNull(telephone));
+            // --- Emergency contact mapping from Patient.contact[0] ---
+            if (fhirPatient.hasContact() && !fhirPatient.getContact().isEmpty()) {
+                Patient.ContactComponent contact = fhirPatient.getContactFirstRep();
+
+                // Emergency contact name
+                if (contact.hasName() && contact.getName() != null) {
+                    HumanName contactName = contact.getName();
+                    String contactGiven = joinGiven(contactName.getGiven());
+                    String contactFamily = contactName.getFamily();
+
+                    StringBuilder nameBuilder = new StringBuilder();
+                    if (contactGiven != null && !contactGiven.isBlank()) {
+                        nameBuilder.append(contactGiven.trim());
+                    }
+                    if (contactFamily != null && !contactFamily.isBlank()) {
+                        if (nameBuilder.length() > 0) nameBuilder.append(" ");
+                        nameBuilder.append(contactFamily.trim());
+                    }
+
+                    String emergencyName = blankToNull(nameBuilder.toString());
+                    pn.setEmergencyContactName(emergencyName);
+                }
+
+                // Emergency contact phone (from contact.telecom)
+                if (contact.hasTelecom()) {
+                    String emergencyPhone = extractTelecomValue(
+                            contact.getTelecom(),
+                            ContactPoint.ContactPointSystem.PHONE
+                    );
+                    pn.setEmergencyContactPhone(blankToNull(emergencyPhone));
+                }
+            }
             person.getPersonNames().add(pn);
         }
+
+
 
         // Gender -> only set Concept if it exists to avoid FK errors
         String gender = (fhirPatient.hasGender() && fhirPatient.getGender() != null)

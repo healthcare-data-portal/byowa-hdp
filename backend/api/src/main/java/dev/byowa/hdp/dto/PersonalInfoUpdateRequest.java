@@ -38,6 +38,4 @@ public class PersonalInfoUpdateRequest {
     public String getEmergencyContactPhone() { return emergencyContactPhone; }
     public void setEmergencyContactPhone(String emergencyContactPhone) { this.emergencyContactPhone = emergencyContactPhone; }
 
-    public String getEmergencyContactRelation() { return emergencyContactRelation; }
-    public void setEmergencyContactRelation(String emergencyContactRelation) { this.emergencyContactRelation = emergencyContactRelation; }
 }

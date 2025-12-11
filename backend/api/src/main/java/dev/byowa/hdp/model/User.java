@@ -28,36 +28,6 @@ public class User {
     @JoinColumn(name = "person_id")
     private Person person;
 
-    // Editable, non-OMOP auxiliary fields
-    // Fallback phone/address when no OMOP Person/Location exists
-    @Column(name = "contact_phone")
-    private String contactPhone;
-
-    @Column(name = "address_street")
-    private String addressStreet;
-
-    @Column(name = "address_city")
-    private String addressCity;
-
-    @Column(name = "address_state")
-    private String addressState;
-
-    @Column(name = "address_zip")
-    private String addressZip;
-
-    @Column(name = "address_country")
-    private String addressCountry;
-
-    // Editable, non-OMOP auxiliary fields
-    @Column(name = "emergency_contact_name")
-    private String emergencyContactName;
-
-    @Column(name = "emergency_contact_phone")
-    private String emergencyContactPhone;
-
-    @Column(name = "emergency_contact_relation")
-    private String emergencyContactRelation;
-
     public User() {
     }
 
@@ -113,77 +83,5 @@ public class User {
 
     public void setFullName(String fullName) {
         this.fullName = fullName;
-    }
-
-    public String getContactPhone() {
-        return contactPhone;
-    }
-
-    public void setContactPhone(String contactPhone) {
-        this.contactPhone = contactPhone;
-    }
-
-    public String getAddressStreet() {
-        return addressStreet;
-    }
-
-    public void setAddressStreet(String addressStreet) {
-        this.addressStreet = addressStreet;
-    }
-
-    public String getAddressCity() {
-        return addressCity;
-    }
-
-    public void setAddressCity(String addressCity) {
-        this.addressCity = addressCity;
-    }
-
-    public String getAddressState() {
-        return addressState;
-    }
-
-    public void setAddressState(String addressState) {
-        this.addressState = addressState;
-    }
-
-    public String getAddressZip() {
-        return addressZip;
-    }
-
-    public void setAddressZip(String addressZip) {
-        this.addressZip = addressZip;
-    }
-
-    public String getAddressCountry() {
-        return addressCountry;
-    }
-
-    public void setAddressCountry(String addressCountry) {
-        this.addressCountry = addressCountry;
-    }
-
-    public String getEmergencyContactName() {
-        return emergencyContactName;
-    }
-
-    public void setEmergencyContactName(String emergencyContactName) {
-        this.emergencyContactName = emergencyContactName;
-    }
-
-    public String getEmergencyContactPhone() {
-        return emergencyContactPhone;
-    }
-
-    public void setEmergencyContactPhone(String emergencyContactPhone) {
-        this.emergencyContactPhone = emergencyContactPhone;
-    }
-
-    public String getEmergencyContactRelation() {
-        return emergencyContactRelation;
-    }
-
-    public void setEmergencyContactRelation(String emergencyContactRelation) {
-        this.emergencyContactRelation = emergencyContactRelation;
     }
 }
