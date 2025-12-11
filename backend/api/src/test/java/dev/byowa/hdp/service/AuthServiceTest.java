@@ -45,7 +45,7 @@ class AuthServiceTest {
         RegisterRequest req = new RegisterRequest("alice", "pw", "Alice Doe");
         when(userRepository.existsByUsername("alice")).thenReturn(false);
         when(passwordEncoder.encode("pw")).thenReturn("hashed");
-        when(jwtService.generateToken("alice", Role.PATIENT.name())).thenReturn("token-123");
+        when(jwtService.generateToken("alice", Role.PATIENT.name(), "")).thenReturn("token-123");
 
         AuthResponse resp = authService.register(req);
 
@@ -65,13 +65,13 @@ class AuthServiceTest {
         RegisterRequest req = new RegisterRequest("carol", "secret", "Carol Smith");
         when(userRepository.existsByUsername("carol")).thenReturn(false);
         when(passwordEncoder.encode("secret")).thenReturn("enc");
-        when(jwtService.generateToken("carol", Role.PATIENT.name())).thenReturn("tkn");
+        when(jwtService.generateToken("carol", Role.PATIENT.name(), "")).thenReturn("tkn");
 
         authService.register(req);
 
         // ensure user saved and jwt called with correct args
         verify(userRepository).save(any(User.class));
-        verify(jwtService).generateToken("carol", Role.PATIENT.name());
+        verify(jwtService).generateToken("carol", Role.PATIENT.name(), "");
     }
 
     @Test
@@ -95,7 +95,7 @@ class AuthServiceTest {
         u.setRole(Role.ADMIN);
         when(userRepository.findByUsername("bob")).thenReturn(Optional.of(u));
         when(passwordEncoder.matches("pw", "hashed")).thenReturn(true);
-        when(jwtService.generateToken("bob", Role.ADMIN.name())).thenReturn("jwt");
+        when(jwtService.generateToken("bob", Role.ADMIN.name(), "")).thenReturn("jwt");
 
         AuthResponse resp = authService.login(req);
         assertEquals("jwt", resp.getToken());
@@ -113,11 +113,11 @@ class AuthServiceTest {
         when(userRepository.findByUsername("dave")).thenReturn(Optional.of(u));
         when(passwordEncoder.matches("pw", "hashed")).thenReturn(true);
 
-        when(jwtService.generateToken("dave", Role.PATIENT.name())).thenReturn("tok");
+        when(jwtService.generateToken("dave", Role.PATIENT.name(), "")).thenReturn("tok");
 
         AuthResponse resp = authService.login(req);
         assertEquals("tok", resp.getToken());
-        verify(jwtService).generateToken("dave", Role.PATIENT.name());
+        verify(jwtService).generateToken("dave", Role.PATIENT.name(), "");
     }
 
     @Test

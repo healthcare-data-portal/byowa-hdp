@@ -26,9 +26,13 @@ public class JwtService {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateToken(String username, String role) {
+    public String generateToken(String username, String role, String fullName) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", role);
+        if (fullName != null && !fullName.isBlank()) {
+            // Expose full name to the frontend
+            claims.put("fullName", fullName);
+        }
 
         Date now = new Date();
         Date exp = new Date(now.getTime() + expirationMs);
@@ -63,3 +67,4 @@ public class JwtService {
                 .getBody();
     }
 }
+

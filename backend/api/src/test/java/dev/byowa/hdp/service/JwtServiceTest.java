@@ -21,7 +21,7 @@ class JwtServiceTest {
 
     @Test
     void generateToken_containsSubjectAndRole_andIsNotExpiredInitially() {
-        String token = jwtService.generateToken("alice", "PATIENT");
+        String token = jwtService.generateToken("alice", "PATIENT", "");
         assertNotNull(token);
 
         String username = jwtService.extractUsername(token);
@@ -35,7 +35,7 @@ class JwtServiceTest {
     void tokenExpiresWhenExpirationIsShort() throws Exception {
         // 0 ms expiration -> immediately expired; current implementation throws when parsing expired tokens
         setField(jwtService, "expirationMs", 0L);
-        String token = jwtService.generateToken("bob", "ADMIN");
+        String token = jwtService.generateToken("bob", "ADMIN", "");
         assertThrows(io.jsonwebtoken.ExpiredJwtException.class, () -> jwtService.isExpired(token));
     }
 

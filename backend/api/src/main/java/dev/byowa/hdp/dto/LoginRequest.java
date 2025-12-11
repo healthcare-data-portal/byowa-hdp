@@ -3,7 +3,7 @@ package dev.byowa.hdp.dto;
 public class LoginRequest {
     private String username;
     private String password;
-
+    private String fullName;
     public LoginRequest() {}
 
     public LoginRequest(String username, String password) {
@@ -26,4 +26,5 @@ public class LoginRequest {
     public void setPassword(String password) {
         this.password = password;
     }
+
 }
