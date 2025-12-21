@@ -10,6 +10,7 @@ public interface PersonRepository extends JpaRepository<Person, Integer> {
     @Query("SELECT MAX(p.id) FROM Person p")
     Integer findMaxId();
 
+    boolean existsByPersonSourceValue(String personSourceValue);
     Optional<Person> findByPersonSourceValue(String personSourceValue);
 
 }
