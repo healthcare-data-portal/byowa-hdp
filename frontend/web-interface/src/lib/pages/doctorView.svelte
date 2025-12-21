@@ -39,7 +39,6 @@
 
     function detectFHIRMessageType(fhirData) {
         const resourceType = (fhirData.resourceType || '').toLowerCase();
-
         switch (resourceType) {
             case 'condition':
                 return 'diagnosis';
@@ -48,6 +47,8 @@
             case 'medicationrequest':
             case 'medicationstatement':
                 return 'medication';
+            case 'patient':
+                return 'patient'
             case 'observation':
                 if (fhirData.category?.[0]?.coding?.[0]?.code === 'laboratory')
                     return 'lab_result';
@@ -58,9 +59,22 @@
     }
 
     function convertFHIRToOMOP(fhirData, recordType) {
+
+        const resourceType = (fhirData.resourceType || '').toLowerCase();
+
+        const patientSSN =
+          fhirData.identifier?.[0]?.value || 'unknown';
+
+        const personId =
+          resourceType === 'patient'
+            ? patientSSN
+            : (fhirData.subject?.reference?.split('/')[1] ||
+               fhirData.patient?.reference?.split('/')[1] ||
+               'unknown');
+
         const baseOMOP = {
-            person_id: fhirData.subject?.reference?.split('/')[1] || 'unknown',
-            date: new Date().toISOString().split('T')[0]
+          person_id: personId,
+          date: new Date().toISOString().split('T')[0]
         };
 
         switch (recordType) {
@@ -106,11 +120,18 @@
             const fhirData = JSON.parse(fileText);
 
             const recordType = detectFHIRMessageType(fhirData);
+            const resourceType = (fhirData.resourceType || '').toLowerCase();
+            const patientSSN =
+              fhirData.identifier?.[0]?.value ||  // ggf. später gezielt filtern, siehe Hinweis unten
+              'unknown';
+
 
             const patientId =
-                fhirData.subject?.reference?.split('/')[1] ||
-                fhirData.patient?.reference?.split('/')[1] ||
-                'unknown';
+              resourceType === 'patient'
+                ? patientSSN
+                : (fhirData.subject?.reference?.split('/')[1] ||
+                   fhirData.patient?.reference?.split('/')[1] ||
+                   'unknown');
 
             const omopData = convertFHIRToOMOP(fhirData, recordType);
 
@@ -627,7 +648,7 @@
                                             class="muted"
                                             style="font-size:0.85rem;"
                                     >
-                                        Patient ID
+                                        Patient Social Security Number
                                     </div>
                                     <div
                                             style="
@@ -639,6 +660,7 @@
                                         "
                                     >
                                         {uploadResult.patientId}
+
                                     </div>
                                 </div>
                                 <div>
