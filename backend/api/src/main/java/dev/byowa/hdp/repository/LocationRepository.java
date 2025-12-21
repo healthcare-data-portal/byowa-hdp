@@ -11,4 +11,6 @@ public interface LocationRepository extends JpaRepository<Location, Integer> {
 
     @Query("select max(l.id) from Location l")
     Integer findMaxId();
+
+
 }

@@ -59,11 +59,51 @@
     }
   }
   const handleCancel = () => (isEdit = false);
-  const handleExport = () => {
-    if (typeof window !== 'undefined') {
-      window.print();
+  const handleExport = async () => {
+    const token =
+      typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+
+    if (!token) {
+      alert('Not authenticated');
+      return;
+    }
+
+    try {
+      const url = `http://localhost:8080/api/export/my/patient/pdf`;
+
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!res.ok) {
+        const msg = await res.text().catch(() => null);
+        throw new Error(msg || `PDF export failed (${res.status})`);
+      }
+
+      const blob = await res.blob();
+
+      // Try to use filename from Content-Disposition (fallback if not present)
+      const cd = res.headers.get('Content-Disposition') || '';
+      const match = cd.match(/filename="?([^"]+)"?/i);
+      const filename = match?.[1] || 'my_patient_report.pdf';
+
+      // Trigger download
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      alert(err?.message || 'Failed to export PDF');
     }
   };
+
 </script>
 
 <!-- Header: patient pill (dark), white text; point to your patient icon -->
@@ -81,10 +121,6 @@
         <button class="btn ghost" aria-label="Export PDF" on:click={handleExport}>
           <img src="/src/lib/assets/pictures/file-export.png" alt="icon" class="icon" width="12" height="12" />
           Export PDF
-        </button>
-        <button class="btn ghost" aria-label="Detailed View">
-          <img src="/src/lib/assets/pictures/eye.png" alt="icon" class="icon" width="12" height="12" />
-          Detailed View
         </button>
         <button class="btn primary" aria-label="Edit Profile" on:click={toggleEdit}>
           {isEdit ? 'Exit Edit' : 'Edit Profile'}

@@ -195,6 +195,52 @@
         event.target.value = '';
     }
 
+
+
+    async function downloadPatientPdf(userId) {
+      const token =
+        typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+
+      if (!token) {
+        alert('Not authenticated');
+        return;
+      }
+
+      try {
+        const url = `${API_BASE.replace(/\/$/, '')}/export/patients/${userId}/pdf`;
+
+        const res = await fetch(url, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if (!res.ok) {
+          const msg = await res.text().catch(() => null);
+          throw new Error(msg || `PDF export failed (${res.status})`);
+        }
+
+        const blob = await res.blob();
+
+        const cd = res.headers.get('Content-Disposition') || '';
+        const match = cd.match(/filename="?([^"]+)"?/i);
+        const filename = match?.[1] || `patient_${userId}_report.pdf`;
+
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(blobUrl);
+      } catch (err) {
+        alert(err?.message || 'Failed to export PDF');
+      }
+    }
+
+
     async function closeUploadDialog() {
         showUploadDialog = false;
         uploadStatus = 'idle';
@@ -435,13 +481,14 @@
                                             {p.consentGiven ? 'Consented' : 'No Consent'}
                                         </span>
                                 </td>
-                                <td data-label="Actions">
-                                    <button
-                                            class="btn ghost"
-                                            on:click={() => (activeTab = 'records')}
-                                    >
-                                        View Records
-                                    </button>
+                                <td data-label="Actions" style="display:flex; gap:8px; flex-wrap:wrap;">
+                                  <button class="btn ghost" on:click={() => (activeTab = 'records')}>
+                                    View Records
+                                  </button>
+
+                                  <button class="btn ghost" on:click={() => downloadPatientPdf(p.id)}>
+                                    Export PDF
+                                  </button>
                                 </td>
                             </tr>
                         {/each}
