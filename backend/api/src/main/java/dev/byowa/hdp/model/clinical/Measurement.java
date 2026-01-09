@@ -76,7 +76,7 @@ public class Measurement {
     @JoinColumn(name = "visit_detail_id")
     private VisitDetail visitDetail;
 
-    @Size(max = 50)
+    @Size(max = 100)
     @Column(name = "measurement_source_value", length = 50)
     private String measurementSourceValue;
 

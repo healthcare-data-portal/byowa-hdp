@@ -30,7 +30,7 @@
       "value": "patient012"
     }
   },
-  "effectiveDateTime": "2026-01-09T08:37:00+00:00Z",
+  "effectiveDateTime": "2026-01-09T08:37:00+00:00",
   "valueCodeableConcept": {
     "coding": [
       {

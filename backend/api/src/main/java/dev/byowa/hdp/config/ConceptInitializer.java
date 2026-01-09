@@ -37,6 +37,24 @@ public class ConceptInitializer implements ApplicationRunner {
     private final VocabularyRepository vocabularyRepository;
     private final ConceptClassRepository conceptClassRepository;
 
+    // Demo concepts for Measurement mapping (custom IDs)
+    private static final int FHIR_MEASUREMENT_TYPE_CONCEPT_ID = 99999001;
+
+    // Measurement concepts (demo) mapped from the LOINC codes we use in demo Observations
+    private static final int C_ABO_GROUP = 99999010;     // LOINC 883-9
+    private static final int C_RH_TYPE = 99999011;       // LOINC 88027-8
+    private static final int C_HEART_RATE = 99999012;    // LOINC 8867-4
+    private static final int C_BODY_TEMP = 99999013;     // LOINC 8310-5
+    private static final int C_BODY_WEIGHT = 99999014;   // LOINC 29463-7
+    private static final int C_BODY_HEIGHT = 99999015;   // LOINC 8302-2
+    private static final int C_BP_SYSTOLIC = 99999016;   // LOINC 8480-6
+    private static final int C_BP_DIASTOLIC = 99999017;  // LOINC 8462-4
+    private static final int C_SPO2 = 99999018;          // LOINC 59408-5
+    private static final int C_RESP_RATE = 99999019;     // LOINC 9279-1
+
+    // fallback
+    private static final int C_GENERIC_MEASUREMENT = 99999099;
+
     public ConceptInitializer(ConceptRepository conceptRepository,
                               DomainRepository domainRepository,
                               VocabularyRepository vocabularyRepository,
@@ -52,6 +70,7 @@ public class ConceptInitializer implements ApplicationRunner {
         log.info("[ConceptInitializer] start");
         initRootGraph();
         initUnknownConcepts();
+        initDemoMeasurementConcepts();
         log.info("[ConceptInitializer] done");
     }
 
@@ -96,6 +115,45 @@ public class ConceptInitializer implements ApplicationRunner {
         domainRepository.save(d);
         vocabularyRepository.save(v);
         conceptClassRepository.save(cc);
+    }
+    private void initDemoMeasurementConcepts() {
+        Domain d = domainRepository.findById(ROOT_KEY).orElseThrow();
+        Vocabulary v = vocabularyRepository.findById(ROOT_KEY).orElseThrow();
+        ConceptClass cc = conceptClassRepository.findById(ROOT_KEY).orElseThrow();
+
+        createConceptIfMissing(FHIR_MEASUREMENT_TYPE_CONCEPT_ID, "FHIR Imported Measurement Type", "FHIR_MEAS_TYPE", d, v, cc);
+
+        createConceptIfMissing(C_ABO_GROUP, "ABO group [Type] in Blood (Demo)", "LOINC:883-9", d, v, cc);
+        createConceptIfMissing(C_RH_TYPE, "Rh group Ag [Type] on Red Blood Cells (Demo)", "LOINC:88027-8", d, v, cc);
+        createConceptIfMissing(C_HEART_RATE, "Heart rate (Demo)", "LOINC:8867-4", d, v, cc);
+        createConceptIfMissing(C_BODY_TEMP, "Body temperature (Demo)", "LOINC:8310-5", d, v, cc);
+        createConceptIfMissing(C_BODY_WEIGHT, "Body weight (Demo)", "LOINC:29463-7", d, v, cc);
+        createConceptIfMissing(C_BODY_HEIGHT, "Body height (Demo)", "LOINC:8302-2", d, v, cc);
+        createConceptIfMissing(C_BP_SYSTOLIC, "Systolic blood pressure (Demo)", "LOINC:8480-6", d, v, cc);
+        createConceptIfMissing(C_BP_DIASTOLIC, "Diastolic blood pressure (Demo)", "LOINC:8462-4", d, v, cc);
+        createConceptIfMissing(C_SPO2, "Oxygen saturation by Pulse oximetry (Demo)", "LOINC:59408-5", d, v, cc);
+        createConceptIfMissing(C_RESP_RATE, "Respiratory rate (Demo)", "LOINC:9279-1", d, v, cc);
+
+        createConceptIfMissing(C_GENERIC_MEASUREMENT, "Generic FHIR Measurement (Demo)", "FHIR:GENERIC", d, v, cc);
+
+        log.info("[ConceptInitializer] demo measurement concepts ready");
+    }
+
+    private void createConceptIfMissing(int id, String name, String code, Domain d, Vocabulary v, ConceptClass cc) {
+        if (conceptRepository.existsById(id)) return;
+
+        Concept c = new Concept();
+        c.setId(id);
+        c.setConceptName(name);
+        c.setConceptCode(code);
+        c.setValidStartDate(LocalDate.now());
+        c.setValidEndDate(LocalDate.of(2099, 12, 31));
+        c.setDomain(d);
+        c.setVocabulary(v);
+        c.setConceptClass(cc);
+        conceptRepository.save(c);
+
+        log.info("[ConceptInitializer] created demo concept {} ({})", id, code);
     }
 
 // Java

@@ -30,7 +30,7 @@
       "value": "patient003"
     }
   },
-  "effectiveDateTime": "2026-01-09T09:14:00+00:00Z",
+  "effectiveDateTime": "2026-01-09T09:14:00+00:00",
   "valueQuantity": {
     "value": 70.7,
     "unit": "kg",

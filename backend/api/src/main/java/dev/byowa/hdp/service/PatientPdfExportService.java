@@ -2,6 +2,7 @@ package dev.byowa.hdp.service;
 
 import dev.byowa.hdp.model.Role;
 import dev.byowa.hdp.model.User;
+import dev.byowa.hdp.model.clinical.Measurement;
 import dev.byowa.hdp.model.clinical.Person;
 import dev.byowa.hdp.model.clinical.PersonName;
 import dev.byowa.hdp.model.healthsystem.Location;
@@ -9,6 +10,7 @@ import dev.byowa.hdp.repository.PatientDoctorAssignmentRepository;
 import dev.byowa.hdp.repository.UserRepository;
 import dev.byowa.hdp.repository.PersonNameRepository;
 import dev.byowa.hdp.repository.LocationRepository;
+import dev.byowa.hdp.repository.MeasurementRepository;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -22,8 +24,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.time.LocalDate;
-import java.util.Optional;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class PatientPdfExportService {
@@ -32,17 +36,23 @@ public class PatientPdfExportService {
     private final PatientDoctorAssignmentRepository assignmentRepository;
     private final PersonNameRepository personNameRepository;
     private final LocationRepository locationRepository;
+    private final MeasurementRepository measurementRepository;
+
+    // wie viele measurements maximal ins PDF
+    private static final int MAX_MEASUREMENTS_IN_PDF = 120;
 
     public PatientPdfExportService(
             UserRepository userRepository,
             PatientDoctorAssignmentRepository assignmentRepository,
             PersonNameRepository personNameRepository,
-            LocationRepository locationRepository
+            LocationRepository locationRepository,
+            MeasurementRepository measurementRepository
     ) {
         this.userRepository = userRepository;
         this.assignmentRepository = assignmentRepository;
         this.personNameRepository = personNameRepository;
         this.locationRepository = locationRepository;
+        this.measurementRepository = measurementRepository;
     }
 
     /**
@@ -59,8 +69,8 @@ public class PatientPdfExportService {
 
         enforceAccess(requester, patientUser);
 
-        // --- Load linked OMOP entities via the schema you provided ---
-        Person person = patientUser.getPerson(); // users.person_id -> person.person_id (already mapped in your project)
+        // --- Load linked OMOP entities ---
+        Person person = patientUser.getPerson();
 
         Optional<PersonName> personNameOpt =
                 (person != null)
@@ -72,7 +82,7 @@ public class PatientPdfExportService {
                         ? locationRepository.findById(person.getId())
                         : Optional.empty();
 
-        // --- Build display fields (prefer person_name, then users, then fallback) ---
+        // --- Build display fields ---
         PersonName pn = personNameOpt.orElse(null);
         Location loc = locationOpt.orElse(null);
 
@@ -113,6 +123,7 @@ public class PatientPdfExportService {
                 };
             }
         }
+
         if (person != null) {
             Integer y = person.getYearOfBirth();
             Integer m = person.getMonthOfBirth();
@@ -124,7 +135,6 @@ public class PatientPdfExportService {
 
         String address = "—";
         if (loc != null) {
-            // address_1, city, zip, state, country_source_value
             String a1 = loc.getAddress1();
             String city = loc.getCity();
             String zip = loc.getZip();
@@ -137,9 +147,12 @@ public class PatientPdfExportService {
                     safe(city),
                     safe(state),
                     safe(country)
-            ).replaceAll("(,\\s*)+$", ""); // trim trailing commas if some fields are empty
+            ).replaceAll("(,\\s*)+$", "");
             if (address.isBlank()) address = "—";
         }
+
+        // --- Load medical data (measurements) ---
+        List<MeasurementLine> measurementLines = loadMeasurementLines(person);
 
         try {
             return renderStyledPatientPdf(
@@ -154,7 +167,8 @@ public class PatientPdfExportService {
                     dob,
                     gender,
                     emergencyName,
-                    emergencyPhone
+                    emergencyPhone,
+                    measurementLines
             );
 
         } catch (IOException e) {
@@ -166,15 +180,70 @@ public class PatientPdfExportService {
     public byte[] generateMyPatientPdf() {
         User requester = getRequesterUserOrThrow();
 
-        // Minimal: only patients (and admins, for convenience) can use this route
         if (requester.getRole() != Role.PATIENT && requester.getRole() != Role.ADMIN) {
             throw new AccessDeniedException("Only patients can export their own report");
         }
 
-        // Reuse the existing generator (will also enforce access)
         return generatePatientPdf(requester.getId());
     }
 
+    private List<MeasurementLine> loadMeasurementLines(Person person) {
+        if (person == null) return List.of();
+
+        // dein "patient002" key (person_source_value)
+        String personKey = person.getPersonSourceValue();
+        if (personKey == null || personKey.isBlank()) return List.of();
+
+        List<Measurement> list = measurementRepository
+                .findByPerson_PersonSourceValueOrderByMeasurementDatetimeDesc(personKey);
+
+        // stable sort: datetime first, fallback date
+        list.sort(Comparator.comparing(this::sortInstant).reversed());
+
+        if (list.size() > MAX_MEASUREMENTS_IN_PDF) {
+            list = list.subList(0, MAX_MEASUREMENTS_IN_PDF);
+        }
+
+        return list.stream()
+                .map(this::toMeasurementLine)
+                .collect(Collectors.toList());
+    }
+
+    private MeasurementLine toMeasurementLine(Measurement m) {
+        Instant inst = sortInstant(m);
+        String when = inst.equals(Instant.EPOCH)
+                ? "—"
+                : DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                .withZone(ZoneOffset.UTC)
+                .format(inst);
+
+        String source = safe(m.getMeasurementSourceValue());
+        if (source.isBlank()) source = "Measurement";
+
+        String value;
+        if (m.getValueAsNumber() != null) {
+            value = m.getValueAsNumber().toPlainString();
+        } else {
+            value = safe(m.getValueSourceValue());
+        }
+        if (value.isBlank()) value = "—";
+
+        String unit = safe(m.getUnitSourceValue());
+        String valueText = unit.isBlank() ? value : (value + " " + unit);
+
+        // optional: LOINC prefix kürzen
+        String niceSource = source.replaceAll("^LOINC:[^ ]+\\s*", "").trim();
+        if (niceSource.isBlank()) niceSource = source;
+
+        return new MeasurementLine(when, niceSource, valueText);
+    }
+
+    private Instant sortInstant(Measurement m) {
+        if (m.getMeasurementDatetime() != null) return m.getMeasurementDatetime();
+        if (m.getMeasurementDate() != null)
+            return m.getMeasurementDate().atStartOfDay().toInstant(ZoneOffset.UTC);
+        return Instant.EPOCH;
+    }
 
     private User getRequesterUserOrThrow() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -234,10 +303,8 @@ public class PatientPdfExportService {
         return joined.isBlank() ? null : joined;
     }
 
-    /**
-     * Simple PDF renderer using PDFBox.
-     * Note: requires dependency org.apache.pdfbox:pdfbox.
-     */
+    // ------------ PDF ---------------
+
     private byte[] renderStyledPatientPdf(
             String generatedBy,
             String generatedByRole,
@@ -250,7 +317,8 @@ public class PatientPdfExportService {
             String dob,
             String gender,
             String emergencyName,
-            String emergencyPhone
+            String emergencyPhone,
+            List<MeasurementLine> measurements
     ) throws IOException {
 
         try (PDDocument doc = new PDDocument();
@@ -265,7 +333,7 @@ public class PatientPdfExportService {
             c.smallLine("Generated at: " + java.time.ZonedDateTime.now().toString());
             c.hr();
 
-            // Section: Identity
+            // Identity
             c.section("Identity");
             c.kv("User ID", String.valueOf(userId));
             c.kv("Person ID", personId != null ? String.valueOf(personId) : "—");
@@ -274,32 +342,50 @@ public class PatientPdfExportService {
 
             c.hrThin();
 
-            // Section: Contact
+            // Contact
             c.section("Contact");
             c.kv("Phone", phone);
             c.kv("Address", address);
 
             c.hrThin();
 
-            // Section: Demographics
+            // Demographics
             c.section("Demographics");
             c.kv("Date of Birth", dob);
             c.kv("Gender", gender);
 
             c.hrThin();
 
-            // Section: Emergency Contact
+            // Emergency
             c.section("Emergency Contact");
             c.kv("Name", emergencyName);
             c.kv("Phone", emergencyPhone);
 
-            // Footer (page number) – simple version
+            c.hrThin();
+
+            // Medical Data (Measurements)
+            c.section("Medical Data (Measurements)");
+            if (measurements == null || measurements.isEmpty()) {
+                c.smallLine("No measurements available.");
+            } else {
+                c.smallLine("Showing latest " + measurements.size() + " measurement(s).");
+                c.yGap(6);
+
+                c.tableHeader("Date/Time (UTC)", "Measurement", "Value");
+                for (MeasurementLine ml : measurements) {
+                    c.tableRow(ml.dateTime(), ml.name(), ml.value());
+                }
+            }
+
+            // Footer
             c.footer("BYOWA-HDP • Confidential");
 
             doc.save(out);
             return out.toByteArray();
         }
     }
+
+    private record MeasurementLine(String dateTime, String name, String value) {}
 
     /** Small helper that manages cursor position, wrapping, and simple layout. */
     private static class PdfCursor {
@@ -345,6 +431,10 @@ public class PatientPdfExportService {
             writeLine(text, PDType1Font.HELVETICA, smallSize);
         }
 
+        void yGap(float gap) {
+            y -= gap;
+        }
+
         void hr() throws IOException {
             y -= 10;
             line(margin, y, pageW - margin, y);
@@ -360,21 +450,18 @@ public class PatientPdfExportService {
         void kv(String key, String value) throws IOException {
             String safeVal = value == null || value.isBlank() ? "—" : value;
 
-            float keyW = 120f; // left column width
+            float keyW = 120f;
             float gap = 10f;
             float xKey = margin;
             float xVal = margin + keyW + gap;
             float valW = (pageW - margin) - xVal;
 
-            // Wrap value if needed
             String[] wrapped = wrap(safeVal, PDType1Font.HELVETICA, bodySize, valW);
 
             ensureSpace(14f + (wrapped.length - 1) * 12f);
 
-            // Key (first line)
             writeAt(xKey, y, key + ":", PDType1Font.HELVETICA_BOLD, bodySize);
 
-            // Value (can be multi-line)
             writeAt(xVal, y, wrapped[0], PDType1Font.HELVETICA, bodySize);
             y -= 12f;
 
@@ -385,6 +472,57 @@ public class PatientPdfExportService {
             }
 
             y -= 2f;
+        }
+
+        // --- simple 3-column table ---
+        void tableHeader(String c1, String c2, String c3) throws IOException {
+            y -= 6;
+            ensureSpace(16);
+
+            float x1 = margin;
+            float w1 = 120f;
+            float x2 = x1 + w1 + 10f;
+            float w2 = 280f;
+            float x3 = x2 + w2 + 10f;
+            float w3 = (pageW - margin) - x3;
+
+            writeAt(x1, y, c1, PDType1Font.HELVETICA_BOLD, smallSize);
+            writeAt(x2, y, c2, PDType1Font.HELVETICA_BOLD, smallSize);
+            writeAt(x3, y, c3, PDType1Font.HELVETICA_BOLD, smallSize);
+            y -= 10;
+
+            line(margin, y, pageW - margin, y);
+            y -= 10;
+        }
+
+        void tableRow(String col1, String col2, String col3) throws IOException {
+            float x1 = margin;
+            float w1 = 120f;
+            float x2 = x1 + w1 + 10f;
+            float w2 = 280f;
+            float x3 = x2 + w2 + 10f;
+            float w3 = (pageW - margin) - x3;
+
+            String[] a = wrap(col1 == null || col1.isBlank() ? "—" : col1, PDType1Font.HELVETICA, smallSize, w1);
+            String[] b = wrap(col2 == null || col2.isBlank() ? "—" : col2, PDType1Font.HELVETICA, smallSize, w2);
+            String[] c = wrap(col3 == null || col3.isBlank() ? "—" : col3, PDType1Font.HELVETICA, smallSize, w3);
+
+            int lines = Math.max(a.length, Math.max(b.length, c.length));
+            float needed = lines * 10f + 6f;
+            ensureSpace(needed);
+
+            for (int i = 0; i < lines; i++) {
+                String t1 = i < a.length ? a[i] : "";
+                String t2 = i < b.length ? b[i] : "";
+                String t3 = i < c.length ? c[i] : "";
+
+                writeAt(x1, y, t1, PDType1Font.HELVETICA, smallSize);
+                writeAt(x2, y, t2, PDType1Font.HELVETICA, smallSize);
+                writeAt(x3, y, t3, PDType1Font.HELVETICA, smallSize);
+                y -= 10f;
+            }
+
+            y -= 4f;
         }
 
         void footer(String text) throws IOException {
@@ -422,9 +560,8 @@ public class PatientPdfExportService {
         }
 
         private static String[] wrap(String text, org.apache.pdfbox.pdmodel.font.PDFont font, float size, float maxWidth) throws IOException {
-            // Simple whitespace wrap
             String[] words = text.split("\\s+");
-            java.util.List<String> lines = new java.util.ArrayList<>();
+            List<String> lines = new ArrayList<>();
             StringBuilder line = new StringBuilder();
 
             for (String w : words) {
@@ -443,5 +580,4 @@ public class PatientPdfExportService {
             return lines.toArray(new String[0]);
         }
     }
-
 }
