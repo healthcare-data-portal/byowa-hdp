@@ -1,0 +1,33 @@
+
+{
+  "resourceType": "Patient",
+  "id": "p007",
+  "identifier": [{
+    "system": "urn:oid:1.2.36.146.595.217.0.1",
+    "value": "patient007"
+  }],
+  "active": true,
+  "name": [{
+    "use": "official",
+    "family": "Bauer",
+    "given": ["Miriam"]
+  }],
+  "telecom": [
+    { "system": "email", "value": "miriam.bauer@example.com" },
+    { "system": "phone", "value": "+43 660 111 0007" }
+  ],
+  "gender": "female",
+  "birthDate": "2003-06-05",
+  "address": [{
+    "use": "home",
+    "line": ["Ottakringer Straße 21"],
+    "city": "Wien",
+    "state": "WI",
+    "postalCode": "1160",
+    "country": "AT"
+  }],
+  "contact": [{
+    "name": { "family": "Bauer", "given": ["Helmut"] },
+    "telecom": [{ "system": "phone", "value": "+43 660 900 0007" }]
+  }]
+}

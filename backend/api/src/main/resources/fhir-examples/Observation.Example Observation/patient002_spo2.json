@@ -1,0 +1,40 @@
+{
+  "resourceType": "Observation",
+  "id": "patient002-spo2",
+  "status": "final",
+  "category": [
+    {
+      "coding": [
+        {
+          "system": "http://terminology.hl7.org/CodeSystem/observation-category",
+          "code": "vital-signs",
+          "display": "Vital Signs"
+        }
+      ],
+      "text": "Vital Signs"
+    }
+  ],
+  "code": {
+    "coding": [
+      {
+        "system": "http://loinc.org",
+        "code": "59408-5",
+        "display": "Oxygen saturation in Arterial blood by Pulse oximetry"
+      }
+    ],
+    "text": "Oxygen saturation in Arterial blood by Pulse oximetry"
+  },
+  "subject": {
+    "identifier": {
+      "system": "urn:oid:1.2.36.146.595.217.0.1",
+      "value": "patient002"
+    }
+  },
+  "effectiveDateTime": "2026-01-09T09:26:00+00:00Z",
+  "valueQuantity": {
+    "value": 96,
+    "unit": "%",
+    "system": "http://unitsofmeasure.org",
+    "code": "%"
+  }
+}

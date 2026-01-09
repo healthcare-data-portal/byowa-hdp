@@ -1,0 +1,22 @@
+{
+  "resourceType": "Practitioner",
+  "id": "d002",
+  "identifier": [{
+    "system": "http://www.acme.org/practitioners",
+    "value": "doctor002"
+  }],
+  "active": true,
+  "name": [{
+    "family": "König",
+    "given": ["Thomas"],
+    "prefix": ["Dr"]
+  }],
+  "address": [{
+    "use": "work",
+    "line": ["Währinger Gürtel 18"],
+    "city": "Wien",
+    "state": "WI",
+    "postalCode": "1090",
+    "country": "AT"
+  }]
+}

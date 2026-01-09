@@ -1,0 +1,32 @@
+{
+  "resourceType": "Patient",
+  "id": "p008",
+  "identifier": [{
+    "system": "urn:oid:1.2.36.146.595.217.0.1",
+    "value": "patient008"
+  }],
+  "active": true,
+  "name": [{
+    "use": "official",
+    "family": "Steiner",
+    "given": ["Florian"]
+  }],
+  "telecom": [
+    { "system": "email", "value": "florian.steiner@example.com" },
+    { "system": "phone", "value": "+43 660 111 0008" }
+  ],
+  "gender": "male",
+  "birthDate": "1991-12-17",
+  "address": [{
+    "use": "home",
+    "line": ["Donaufelder Straße 9"],
+    "city": "Wien",
+    "state": "WI",
+    "postalCode": "1210",
+    "country": "AT"
+  }],
+  "contact": [{
+    "name": { "family": "Steiner", "given": ["Petra"] },
+    "telecom": [{ "system": "phone", "value": "+43 660 900 0008" }]
+  }]
+}

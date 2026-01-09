@@ -36,17 +36,24 @@
 
   $: roleLabel = finalRole ? finalRole[0].toUpperCase() + finalRole.slice(1) : '';
 
-  // Auto-fill name/email from JWT if not provided via props
-  onMount(() => {
-    try {
-      const token = localStorage.getItem('token');
-      if (token && (!name || !email)) {
-        const info = getUserInfoFromToken(token);
-        if (!name && info.name) name = info.name;
-        if (!email && info.email) email = info.email;
+onMount(() => {
+  try {
+    const token = localStorage.getItem('token');
+    if (token && (!name || !email)) {
+      const info = getUserInfoFromToken(token);
+
+      // Prefer fullName if available, fallback to name
+      if (!name && (info.fullName || info.name)) {
+        name = info.fullName || info.name;
       }
-    } catch {}
-  });
+
+      if (!email && info.email) {
+        email = info.email;
+      }
+    }
+  } catch {}
+});
+
 </script>
 
 <header class="topbar">

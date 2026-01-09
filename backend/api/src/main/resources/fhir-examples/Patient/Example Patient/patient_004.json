@@ -1,0 +1,32 @@
+{
+  "resourceType": "Patient",
+  "id": "p004",
+  "identifier": [{
+    "system": "urn:oid:1.2.36.146.595.217.0.1",
+    "value": "patient004"
+  }],
+  "active": true,
+  "name": [{
+    "use": "official",
+    "family": "Wagner",
+    "given": ["David"]
+  }],
+  "telecom": [
+    { "system": "email", "value": "david.wagner@example.com" },
+    { "system": "phone", "value": "+43 660 111 0004" }
+  ],
+  "gender": "male",
+  "birthDate": "1977-07-15",
+  "address": [{
+    "use": "home",
+    "line": ["Hernalser Hauptstraße 88"],
+    "city": "Wien",
+    "state": "WI",
+    "postalCode": "1170",
+    "country": "AT"
+  }],
+  "contact": [{
+    "name": { "family": "Wagner", "given": ["Claudia"] },
+    "telecom": [{ "system": "phone", "value": "+43 660 900 0004" }]
+  }]
+}

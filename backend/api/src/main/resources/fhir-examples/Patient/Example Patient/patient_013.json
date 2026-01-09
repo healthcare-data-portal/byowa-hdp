@@ -1,0 +1,32 @@
+{
+  "resourceType": "Patient",
+  "id": "p013",
+  "identifier": [{
+    "system": "urn:oid:1.2.36.146.595.217.0.1",
+    "value": "patient013"
+  }],
+  "active": true,
+  "name": [{
+    "use": "official",
+    "family": "Schneider",
+    "given": ["Lea"]
+  }],
+  "telecom": [
+    { "system": "email", "value": "lea.schneider@example.com" },
+    { "system": "phone", "value": "+43 660 111 0013" }
+  ],
+  "gender": "female",
+  "birthDate": "2005-01-27",
+  "address": [{
+    "use": "home",
+    "line": ["Laxenburger Straße 45"],
+    "city": "Wien",
+    "state": "WI",
+    "postalCode": "1100",
+    "country": "AT"
+  }],
+  "contact": [{
+    "name": { "family": "Schneider", "given": ["Robert"] },
+    "telecom": [{ "system": "phone", "value": "+43 660 900 0013" }]
+  }]
+}

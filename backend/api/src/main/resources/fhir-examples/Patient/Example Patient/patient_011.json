@@ -1,0 +1,32 @@
+{
+  "resourceType": "Patient",
+  "id": "p011",
+  "identifier": [{
+    "system": "urn:oid:1.2.36.146.595.217.0.1",
+    "value": "patient011"
+  }],
+  "active": true,
+  "name": [{
+    "use": "official",
+    "family": "Leitner",
+    "given": ["Theresa"]
+  }],
+  "telecom": [
+    { "system": "email", "value": "theresa.leitner@example.com" },
+    { "system": "phone", "value": "+43 660 111 0011" }
+  ],
+  "gender": "female",
+  "birthDate": "1999-10-10",
+  "address": [{
+    "use": "home",
+    "line": ["Hietzinger Kai 14"],
+    "city": "Wien",
+    "state": "WI",
+    "postalCode": "1130",
+    "country": "AT"
+  }],
+  "contact": [{
+    "name": { "family": "Leitner", "given": ["Daniel"] },
+    "telecom": [{ "system": "phone", "value": "+43 660 900 0011" }]
+  }]
+}

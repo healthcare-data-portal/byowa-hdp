@@ -1,0 +1,32 @@
+{
+  "resourceType": "Patient",
+  "id": "p001",
+  "identifier": [{
+    "system": "urn:oid:1.2.36.146.595.217.0.1",
+    "value": "patient001"
+  }],
+  "active": true,
+  "name": [{
+    "use": "official",
+    "family": "Huber",
+    "given": ["Anna", "Maria"]
+  }],
+  "telecom": [
+    { "system": "email", "value": "anna.huber@example.com" },
+    { "system": "phone", "value": "+43 660 111 0001" }
+  ],
+  "gender": "female",
+  "birthDate": "1998-04-12",
+  "address": [{
+    "use": "home",
+    "line": ["Favoritenstraße 12"],
+    "city": "Wien",
+    "state": "WI",
+    "postalCode": "1100",
+    "country": "AT"
+  }],
+  "contact": [{
+    "name": { "family": "Huber", "given": ["Karin"] },
+    "telecom": [{ "system": "phone", "value": "+43 660 900 0001" }]
+  }]
+}

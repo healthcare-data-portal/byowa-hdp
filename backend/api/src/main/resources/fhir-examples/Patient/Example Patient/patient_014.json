@@ -1,0 +1,32 @@
+{
+  "resourceType": "Patient",
+  "id": "p014",
+  "identifier": [{
+    "system": "urn:oid:1.2.36.146.595.217.0.1",
+    "value": "patient014"
+  }],
+  "active": true,
+  "name": [{
+    "use": "official",
+    "family": "Koch",
+    "given": ["Paul"]
+  }],
+  "telecom": [
+    { "system": "email", "value": "paul.koch@example.com" },
+    { "system": "phone", "value": "+43 660 111 0014" }
+  ],
+  "gender": "male",
+  "birthDate": "1993-03-08",
+  "address": [{
+    "use": "home",
+    "line": ["Taborstraße 33"],
+    "city": "Wien",
+    "state": "WI",
+    "postalCode": "1020",
+    "country": "AT"
+  }],
+  "contact": [{
+    "name": { "family": "Koch", "given": ["Martina"] },
+    "telecom": [{ "system": "phone", "value": "+43 660 900 0014" }]
+  }]
+}

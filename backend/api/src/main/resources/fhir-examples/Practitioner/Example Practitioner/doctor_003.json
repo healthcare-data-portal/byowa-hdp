@@ -1,0 +1,22 @@
+{
+  "resourceType": "Practitioner",
+  "id": "d003",
+  "identifier": [{
+    "system": "http://www.acme.org/practitioners",
+    "value": "doctor003"
+  }],
+  "active": true,
+  "name": [{
+    "family": "Seidl",
+    "given": ["Markus"],
+    "prefix": ["Dr"]
+  }],
+  "address": [{
+    "use": "work",
+    "line": ["Hietzinger Kai 1"],
+    "city": "Wien",
+    "state": "WI",
+    "postalCode": "1130",
+    "country": "AT"
+  }]
+}

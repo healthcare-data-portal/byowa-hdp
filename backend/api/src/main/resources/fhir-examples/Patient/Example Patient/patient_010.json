@@ -1,0 +1,32 @@
+{
+  "resourceType": "Patient",
+  "id": "p010",
+  "identifier": [{
+    "system": "urn:oid:1.2.36.146.595.217.0.1",
+    "value": "patient010"
+  }],
+  "active": true,
+  "name": [{
+    "use": "official",
+    "family": "Pichler",
+    "given": ["Felix"]
+  }],
+  "telecom": [
+    { "system": "email", "value": "felix.pichler@example.com" },
+    { "system": "phone", "value": "+43 660 111 0010" }
+  ],
+  "gender": "male",
+  "birthDate": "1986-08-22",
+  "address": [{
+    "use": "home",
+    "line": ["Simmeringer Hauptstraße 70"],
+    "city": "Wien",
+    "state": "WI",
+    "postalCode": "1110",
+    "country": "AT"
+  }],
+  "contact": [{
+    "name": { "family": "Pichler", "given": ["Andrea"] },
+    "telecom": [{ "system": "phone", "value": "+43 660 900 0010" }]
+  }]
+}

@@ -1,0 +1,32 @@
+{
+  "resourceType": "Patient",
+  "id": "p006",
+  "identifier": [{
+    "system": "urn:oid:1.2.36.146.595.217.0.1",
+    "value": "patient006"
+  }],
+  "active": true,
+  "name": [{
+    "use": "official",
+    "family": "Fischer",
+    "given": ["Jonas"]
+  }],
+  "telecom": [
+    { "system": "email", "value": "jonas.fischer@example.com" },
+    { "system": "phone", "value": "+43 660 111 0006" }
+  ],
+  "gender": "male",
+  "birthDate": "1983-01-09",
+  "address": [{
+    "use": "home",
+    "line": ["Währinger Straße 55"],
+    "city": "Wien",
+    "state": "WI",
+    "postalCode": "1090",
+    "country": "AT"
+  }],
+  "contact": [{
+    "name": { "family": "Fischer", "given": ["Nina"] },
+    "telecom": [{ "system": "phone", "value": "+43 660 900 0006" }]
+  }]
+}

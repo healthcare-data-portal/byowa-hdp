@@ -1,0 +1,32 @@
+{
+  "resourceType": "Patient",
+  "id": "p015",
+  "identifier": [{
+    "system": "urn:oid:1.2.36.146.595.217.0.1",
+    "value": "patient015"
+  }],
+  "active": true,
+  "name": [{
+    "use": "official",
+    "family": "Hofer",
+    "given": ["Sarah"]
+  }],
+  "telecom": [
+    { "system": "email", "value": "sarah.hofer@example.com" },
+    { "system": "phone", "value": "+43 660 111 0015" }
+  ],
+  "gender": "female",
+  "birthDate": "1981-09-01",
+  "address": [{
+    "use": "home",
+    "line": ["Meidlinger Hauptstraße 99"],
+    "city": "Wien",
+    "state": "WI",
+    "postalCode": "1120",
+    "country": "AT"
+  }],
+  "contact": [{
+    "name": { "family": "Hofer", "given": ["Michael"] },
+    "telecom": [{ "system": "phone", "value": "+43 660 900 0015" }]
+  }]
+}

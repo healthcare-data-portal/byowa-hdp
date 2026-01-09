@@ -1,0 +1,32 @@
+{
+  "resourceType": "Patient",
+  "id": "p009",
+  "identifier": [{
+    "system": "urn:oid:1.2.36.146.595.217.0.1",
+    "value": "patient009"
+  }],
+  "active": true,
+  "name": [{
+    "use": "official",
+    "family": "Weber",
+    "given": ["Nora"]
+  }],
+  "telecom": [
+    { "system": "email", "value": "nora.weber@example.com" },
+    { "system": "phone", "value": "+43 660 111 0009" }
+  ],
+  "gender": "female",
+  "birthDate": "1970-03-30",
+  "address": [{
+    "use": "home",
+    "line": ["Kärntner Straße 3"],
+    "city": "Wien",
+    "state": "WI",
+    "postalCode": "1010",
+    "country": "AT"
+  }],
+  "contact": [{
+    "name": { "family": "Weber", "given": ["Julia"] },
+    "telecom": [{ "system": "phone", "value": "+43 660 900 0009" }]
+  }]
+}

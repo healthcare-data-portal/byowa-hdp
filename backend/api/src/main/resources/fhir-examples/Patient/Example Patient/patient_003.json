@@ -1,0 +1,32 @@
+{
+  "resourceType": "Patient",
+  "id": "p003",
+  "identifier": [{
+    "system": "urn:oid:1.2.36.146.595.217.0.1",
+    "value": "patient003"
+  }],
+  "active": true,
+  "name": [{
+    "use": "official",
+    "family": "Schmidt",
+    "given": ["Sophie"]
+  }],
+  "telecom": [
+    { "system": "email", "value": "sophie.schmidt@example.com" },
+    { "system": "phone", "value": "+43 660 111 0003" }
+  ],
+  "gender": "female",
+  "birthDate": "2001-02-20",
+  "address": [{
+    "use": "home",
+    "line": ["Landstraße 44"],
+    "city": "Wien",
+    "state": "WI",
+    "postalCode": "1030",
+    "country": "AT"
+  }],
+  "contact": [{
+    "name": { "family": "Schmidt", "given": ["Markus"] },
+    "telecom": [{ "system": "phone", "value": "+43 660 900 0003" }]
+  }]
+}

@@ -1,0 +1,22 @@
+{
+  "resourceType": "Practitioner",
+  "id": "d001",
+  "identifier": [{
+    "system": "http://www.acme.org/practitioners",
+    "value": "doctor001"
+  }],
+  "active": true,
+  "name": [{
+    "family": "Berger",
+    "given": ["Laura"],
+    "prefix": ["Dr"]
+  }],
+  "address": [{
+    "use": "work",
+    "line": ["Spitalgasse 23"],
+    "city": "Wien",
+    "state": "WI",
+    "postalCode": "1090",
+    "country": "AT"
+  }]
+}

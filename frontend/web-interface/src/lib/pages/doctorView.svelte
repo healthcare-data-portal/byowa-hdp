@@ -107,94 +107,124 @@
                 return baseOMOP;
         }
     }
+async function handleFileUpload(event) {
+  const files = Array.from(event.target.files || []);
+  if (files.length === 0) return;
 
-    async function handleFileUpload(event) {
-        const file = event.target.files?.[0];
-        if (!file) return;
+  uploadStatus = 'processing';
+  uploadResult = null;
 
-        uploadStatus = 'processing';
-        uploadResult = null;
+  const isSingle = files.length === 1;
 
-        try {
-            const fileText = await file.text();
-            const fhirData = JSON.parse(fileText);
+  let okCount = 0;
+  let failCount = 0;
 
-            const recordType = detectFHIRMessageType(fhirData);
-            const resourceType = (fhirData.resourceType || '').toLowerCase();
-            const patientSSN =
-              fhirData.identifier?.[0]?.value ||  // ggf. später gezielt filtern, siehe Hinweis unten
-              'unknown';
+  // für Single behalten wir die Details
+  let singlePatientId = null;
+  let singleRecordType = null;
+  let singleResourceType = null;
+  let singleServerMsg = null;
 
+  try {
+    for (const file of files) {
+      try {
+        const fileText = await file.text();
+        const fhirData = JSON.parse(fileText);
 
-            const patientId =
-              resourceType === 'patient'
-                ? patientSSN
-                : (fhirData.subject?.reference?.split('/')[1] ||
-                   fhirData.patient?.reference?.split('/')[1] ||
-                   'unknown');
+        const recordType = detectFHIRMessageType(fhirData);
+        const resourceType = (fhirData.resourceType || '').toLowerCase();
 
-            const omopData = convertFHIRToOMOP(fhirData, recordType);
+        // identifier-only patient lookup (Patient: identifier[0].value, Observation: subject.identifier.value)
+        const patientId =
+          resourceType === 'patient'
+            ? (fhirData.identifier?.[0]?.value || 'unknown')
+            : (fhirData.subject?.identifier?.value ||
+               fhirData.subject?.reference?.split('/')[1] ||
+               fhirData.patient?.identifier?.value ||
+               fhirData.patient?.reference?.split('/')[1] ||
+               'unknown');
 
-            const newRecord = {
-                id: `record-${Date.now()}`,
-                patientId,
-                patientName:
-                    patients.find((p) => String(p.id) === String(patientId))?.name ||
-                    patientId,
-                date: new Date().toISOString(),
-                type: recordType,
-                title:
-                    fhirData.code?.coding?.[0]?.display ||
-                    fhirData.medicationCodeableConcept?.coding?.[0]?.display ||
-                    `${recordType.charAt(0).toUpperCase()}${recordType.slice(
-                        1
-                    )} Record`,
-                description:
-                    fhirData.note?.[0]?.text ||
-                    fhirData.reasonCode?.[0]?.text ||
-                    `Imported from FHIR ${fhirData.resourceType || 'resource'}`,
-                fhirData,
-                omopData,
-                status: 'Active',
-                formats: ['FHIR', 'OMOP']
-            };
+        const omopData = convertFHIRToOMOP(fhirData, recordType);
 
-            // Füge lokal erstellten Record zur UI hinzu
-            records = [newRecord, ...records];
+        const newRecord = {
+          id: `record-${Date.now()}-${file.name}`,
+          patientId,
+          patientName:
+            patients.find((p) => String(p.id) === String(patientId))?.name ||
+            patientId,
+          date: new Date().toISOString(),
+          type: recordType,
+          title:
+            fhirData.code?.coding?.[0]?.display ||
+            fhirData.medicationCodeableConcept?.coding?.[0]?.display ||
+            `${recordType.charAt(0).toUpperCase()}${recordType.slice(1)} Record`,
+          description:
+            fhirData.note?.[0]?.text ||
+            fhirData.reasonCode?.[0]?.text ||
+            `Imported from FHIR ${fhirData.resourceType || 'resource'}`,
+          fhirData,
+          omopData,
+          status: 'Active',
+          formats: ['FHIR', 'OMOP']
+        };
 
-            // Sende die FHIR-Nutzlast an das Backend-Import-Endpoint
-            const endpoint = `${API_BASE.replace(/\/$/, '')}/fhir/import`;
-            const res = await authFetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(fhirData)
-            });
+        records = [newRecord, ...records];
 
-            if (!res.ok) {
-                const errText = await res.text().catch(() => null);
-                throw new Error(errText || `Import failed (${res.status})`);
-            }
+        const endpoint = `${API_BASE.replace(/\/$/, '')}/fhir/import`;
+        const res = await authFetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(fhirData)
+        });
 
-            const serverMsg = await res.text().catch(() => 'Import successful');
-
-            uploadStatus = 'success';
-            uploadResult = {
-                patientId,
-                recordType,
-                message: `Processed ${fhirData.resourceType || 'FHIR'} and converted to OMOP. Server: ${serverMsg}`
-            };
-        } catch (err) {
-            uploadStatus = 'error';
-            uploadResult = {
-                message: err?.message || 'Failed to process FHIR file. Check format and try again.'
-            };
+        if (!res.ok) {
+          const errText = await res.text().catch(() => null);
+          throw new Error(errText || `Import failed (${res.status})`);
         }
 
-        event.target.value = '';
+        const serverMsg = await res.text().catch(() => 'Import successful');
+
+        okCount++;
+
+        if (isSingle) {
+          singlePatientId = patientId;
+          singleRecordType = recordType;
+          singleResourceType = fhirData.resourceType || 'FHIR';
+          singleServerMsg = serverMsg;
+        }
+      } catch (fileErr) {
+        failCount++;
+        // optional: bei Single direkt abbrechen
+        if (isSingle) throw fileErr;
+        // bei Multi: einfach weiter
+      }
     }
 
+    if (isSingle) {
+      uploadStatus = 'success';
+      uploadResult = {
+        mode: 'single',
+        patientId: singlePatientId,
+        recordType: singleRecordType,
+        message: `Processed ${singleResourceType} and converted to OMOP. Server: ${singleServerMsg}`
+      };
+    } else {
+      uploadStatus = okCount > 0 ? 'success' : 'error';
+      uploadResult = {
+        mode: 'multi',
+        message: `Uploaded ${files.length} file(s): ${okCount} successful, ${failCount} failed.`
+      };
+    }
+  } catch (err) {
+    uploadStatus = 'error';
+    uploadResult = {
+      mode: isSingle ? 'single' : 'multi',
+      message: err?.message || 'Failed to process FHIR file(s). Check format and try again.'
+    };
+  }
+
+  event.target.value = '';
+}
 
 
     async function downloadPatientPdf(userId) {
@@ -648,6 +678,7 @@
                                     id="fhir-upload"
                                     type="file"
                                     accept=".json,.fhir"
+                                    multiple
                                     on:change={handleFileUpload}
                                     style="display:none;"
                             />
@@ -682,7 +713,8 @@
                             </div>
                         </div>
 
-                        {#if uploadResult?.patientId}
+                        {#if uploadResult?.mode === 'single' && uploadResult?.patientId}
+
                             <div
                                     style="
                                     display:grid;

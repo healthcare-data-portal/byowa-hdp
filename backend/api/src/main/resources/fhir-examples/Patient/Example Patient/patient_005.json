@@ -1,0 +1,32 @@
+{
+  "resourceType": "Patient",
+  "id": "p005",
+  "identifier": [{
+    "system": "urn:oid:1.2.36.146.595.217.0.1",
+    "value": "patient005"
+  }],
+  "active": true,
+  "name": [{
+    "use": "official",
+    "family": "Gruber",
+    "given": ["Elena"]
+  }],
+  "telecom": [
+    { "system": "email", "value": "elena.gruber@example.com" },
+    { "system": "phone", "value": "+43 660 111 0005" }
+  ],
+  "gender": "female",
+  "birthDate": "1995-09-28",
+  "address": [{
+    "use": "home",
+    "line": ["Mariahilfer Straße 120"],
+    "city": "Wien",
+    "state": "WI",
+    "postalCode": "1060",
+    "country": "AT"
+  }],
+  "contact": [{
+    "name": { "family": "Gruber", "given": ["Stefan"] },
+    "telecom": [{ "system": "phone", "value": "+43 660 900 0005" }]
+  }]
+}

@@ -1,0 +1,32 @@
+{
+  "resourceType": "Patient",
+  "id": "p002",
+  "identifier": [{
+    "system": "urn:oid:1.2.36.146.595.217.0.1",
+    "value": "patient002"
+  }],
+  "active": true,
+  "name": [{
+    "use": "official",
+    "family": "Mayer",
+    "given": ["Lukas"]
+  }],
+  "telecom": [
+    { "system": "email", "value": "lukas.mayer@example.com" },
+    { "system": "phone", "value": "+43 660 111 0002" }
+  ],
+  "gender": "male",
+  "birthDate": "1989-11-03",
+  "address": [{
+    "use": "home",
+    "line": ["Praterstraße 7"],
+    "city": "Wien",
+    "state": "WI",
+    "postalCode": "1020",
+    "country": "AT"
+  }],
+  "contact": [{
+    "name": { "family": "Mayer", "given": ["Thomas"] },
+    "telecom": [{ "system": "phone", "value": "+43 660 900 0002" }]
+  }]
+}

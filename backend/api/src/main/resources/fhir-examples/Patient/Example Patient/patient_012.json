@@ -1,0 +1,32 @@
+{
+  "resourceType": "Patient",
+  "id": "p012",
+  "identifier": [{
+    "system": "urn:oid:1.2.36.146.595.217.0.1",
+    "value": "patient012"
+  }],
+  "active": true,
+  "name": [{
+    "use": "official",
+    "family": "Novak",
+    "given": ["Emil"]
+  }],
+  "telecom": [
+    { "system": "email", "value": "emil.novak@example.com" },
+    { "system": "phone", "value": "+43 660 111 0012" }
+  ],
+  "gender": "male",
+  "birthDate": "1964-05-19",
+  "address": [{
+    "use": "home",
+    "line": ["Linzer Straße 220"],
+    "city": "Wien",
+    "state": "WI",
+    "postalCode": "1140",
+    "country": "AT"
+  }],
+  "contact": [{
+    "name": { "family": "Novak", "given": ["Sabine"] },
+    "telecom": [{ "system": "phone", "value": "+43 660 900 0012" }]
+  }]
+}
