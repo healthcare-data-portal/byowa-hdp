@@ -20,11 +20,66 @@
     let loadingProvider = true;
     let providerError = null;
 
+    let allRecords = [];
+    let patientRecords = [];
+    let recordsMode = 'all';
+
     let patients = [];
     let records = [];
 
+    let selectedPatientKey = null;
+    let selectedPatientName = null;
+    let loadingMeasurements = false;
+    let measurementsError = null;
+
+
     $: patientCount = patients.length || provider?.patientCount || 0;
-    $: recordsCount = records.length || provider?.recordsCreated || 0;
+    $: recordsCountTop = allRecords.length || provider?.recordsCreated || 0;
+    $: recordsCountBottom = recordsMode === 'all'
+      ? allRecords.length
+      : patientRecords.length;
+    $: displayedRecords = recordsMode === 'all' ? allRecords : patientRecords;
+
+
+
+    let loadedAllOnce = false;
+
+    $: if (activeTab === 'records' && patients.length > 0) {
+      if (recordsMode === 'all' && !loadedAllOnce) {
+        loadedAllOnce = true;
+        loadAllMeasurementsForMyPatients();
+      }
+    }
+
+
+    let showDetailsDialog = false;
+    let detailsRecord = null;
+
+    function openDetails(record) {
+      detailsRecord = record;
+      showDetailsDialog = true;
+    }
+
+    function closeDetails() {
+      showDetailsDialog = false;
+      detailsRecord = null;
+    }
+
+    function displayValueForRecord(r) {
+      // Für Measurements baust du description eh schon als "value unit"
+      if (r?.description) return r.description;
+
+      // Fallbacks
+      const m = r?.omopData;
+      if (!m) return '—';
+
+      if (m.value != null && m.unit) return `${m.value} ${m.unit}`;
+      if (m.value != null) return String(m.value);
+      if (m.valueSourceValue != null) return String(m.valueSourceValue);
+
+      return '—';
+    }
+
 
     function formatDate(d) {
         if (!d) return '—';
@@ -36,6 +91,16 @@
             day: 'numeric'
         });
     }
+
+    async function showAllRecords() {
+      recordsMode = 'all';
+      selectedPatientKey = null;
+      selectedPatientName = null;
+
+      loadedAllOnce = true;
+      await loadAllMeasurementsForMyPatients();
+    }
+
 
     function detectFHIRMessageType(fhirData) {
         const resourceType = (fhirData.resourceType || '').toLowerCase();
@@ -107,6 +172,60 @@
                 return baseOMOP;
         }
     }
+
+    function formatDateTime(d) {
+      if (!d) return '—';
+      const dt = new Date(d);
+      if (isNaN(dt.getTime())) return '—';
+      return dt.toLocaleString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+
+    function measurementToRecord(m, patientName) {
+      const dateIso = m.measurementDatetime
+        ? m.measurementDatetime
+        : (m.measurementDate ? `${m.measurementDate}T00:00:00Z` : new Date().toISOString());
+
+      const title = (m.source || 'Measurement').replace(/^LOINC:[^ ]+\s*/, '').trim();
+      const valueText = m.unit ? `${m.value} ${m.unit}` : `${m.value}`;
+
+      return {
+        id: `meas-${m.id}`,
+        patientId: m.patientId,
+        patientName: patientName || m.patientId,
+        date: dateIso,
+        type: 'measurement',
+        title,
+        description: valueText,
+        fhirData: null,
+        omopData: m,
+        status: 'Active',
+        formats: ['OMOP']
+      };
+    }
+
+
+
+function getPatientKeyFromPatientObject(p) {
+  if (typeof p?.id === 'string' && p.id.startsWith('patient')) return p.id;
+  if (p?.personSourceValue) return p.personSourceValue;
+  if (p?.patientId) return p.patientId;
+
+  // funktioniert bei dir: patient002@hdp.com => patient002
+  if (p?.email && typeof p.email === 'string' && p.email.includes('@')) {
+    return p.email.split('@')[0];
+  }
+
+  return p?.id != null ? String(p.id) : null;
+}
+
+
+
 async function handleFileUpload(event) {
   const files = Array.from(event.target.files || []);
   if (files.length === 0) return;
@@ -200,6 +319,13 @@ async function handleFileUpload(event) {
       }
     }
 
+    if (okCount > 0) {
+      if (provider?.id) {
+        await tryFetchPatients(provider.id);
+      }
+      await refreshRecordsAfterUpload();
+    }
+
     if (isSingle) {
       uploadStatus = 'success';
       uploadResult = {
@@ -225,6 +351,73 @@ async function handleFileUpload(event) {
 
   event.target.value = '';
 }
+
+    async function refreshRecordsAfterUpload() {
+      if (recordsMode === 'patient') {
+        if (selectedPatientKey) {
+          await loadMeasurementsForPatient(selectedPatientKey, selectedPatientName);
+        }
+      } else {
+        await loadAllMeasurementsForMyPatients();
+      }
+    }
+
+
+    async function loadMeasurementsForPatient(patientKey, patientName) {
+      loadingMeasurements = true;
+      measurementsError = null;
+
+      try {
+        const endpoint = `${API_BASE.replace(/\/$/, '')}/measurements/patient/${patientKey}?limit=200`;
+        const res = await authFetch(endpoint);
+        if (!res.ok) {
+          const errText = await res.text().catch(() => null);
+          throw new Error(errText || `Failed to load measurements (${res.status})`);
+        }
+
+        const data = await res.json();
+        patientRecords = Array.isArray(data) ? data.map(m => measurementToRecord(m, patientName)) : [];
+      } catch (err) {
+        measurementsError = err?.message || String(err);
+        patientRecords = [];
+      } finally {
+        loadingMeasurements = false;
+      }
+    }
+
+    async function loadAllMeasurementsForMyPatients() {
+      loadingMeasurements = true;
+      measurementsError = null;
+
+      try {
+        const tasks = patients
+          .map(p => {
+            const key = getPatientKeyFromPatientObject(p);
+            if (!key) return null;
+
+            const url = `${API_BASE.replace(/\/$/, '')}/measurements/patient/${key}?limit=200`;
+            return authFetch(url)
+              .then(async (res) => {
+                if (!res.ok) return [];
+                const data = await res.json().catch(() => []);
+                return Array.isArray(data) ? data.map(m => measurementToRecord(m, p.name)) : [];
+              })
+              .catch(() => []);
+          })
+          .filter(Boolean);
+
+        const results = await Promise.all(tasks);
+        allRecords = results.flat();
+
+        // optional: global sort newest first
+        allRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
+      } catch (err) {
+        measurementsError = err?.message || String(err);
+        allRecords = [];
+      } finally {
+        loadingMeasurements = false;
+      }
+    }
 
 
     async function downloadPatientPdf(userId) {
@@ -343,6 +536,9 @@ async function handleFileUpload(event) {
             await tryFetchPatients(provider.id);
             await tryFetchRecords(provider.id);
         }
+            loadedAllOnce = true;
+            recordsMode = 'all';
+            await loadAllMeasurementsForMyPatients();
     });
 </script>
 
@@ -380,12 +576,12 @@ async function handleFileUpload(event) {
             <DashboardCard
                     title="My Patients"
                     description="Active patient records"
-                    count={patientCount}
+                    value={patientCount}
             />
             <DashboardCard
                     title="Records Created"
                     description="Medical records authored"
-                    count={recordsCount}
+                    value={recordsCountTop}
             />
         </div>
     </section>
@@ -396,15 +592,7 @@ async function handleFileUpload(event) {
         </div>
     {/if}
 
-    <nav class="tabs" aria-label="Doctor sections">
-        <Tabs
-                bind:activeTab
-                items={[
-                { id: 'patients', label: `Patient Management (${patientCount})` },
-                { id: 'records', label: `Medical Records (${recordsCount})` }
-            ]}
-        />
-    </nav>
+
 
     {#if loadingProvider}
         <div style="margin:12px 0">Loading doctor info…</div>
@@ -460,13 +648,23 @@ async function handleFileUpload(event) {
                     </tr>
                     <tr>
                         <th>Records created</th>
-                        <td>{recordsCount}</td>
+                        <td>{recordsCountTop}</td>
                     </tr>
                     </tbody>
                 </table>
             </div>
         </section>
     {/if}
+
+        <nav class="tabs" aria-label="Doctor sections">
+            <Tabs
+                    bind:activeTab
+                    items={[
+                    { id: 'patients', label: `Patient Management (${patientCount})` },
+                    { id: 'records', label: `Medical Records (${recordsCountBottom})` }
+                ]}
+            />
+        </nav>
 
     {#if activeTab === 'patients'}
         <section class="panel" aria-labelledby="patients" style="margin-top:12px;">
@@ -512,9 +710,23 @@ async function handleFileUpload(event) {
                                         </span>
                                 </td>
                                 <td data-label="Actions" style="display:flex; gap:8px; flex-wrap:wrap;">
-                                  <button class="btn ghost" on:click={() => (activeTab = 'records')}>
+                                  <button
+                                    class="btn ghost"
+                                    on:click={async () => {
+                                      const key = getPatientKeyFromPatientObject(p);
+                                      selectedPatientKey = key;
+                                      selectedPatientName = p.name;
+
+                                      recordsMode = 'patient';
+                                      activeTab = 'records';
+
+                                      if (key) await loadMeasurementsForPatient(key, p.name);
+                                    }}
+                                  >
                                     View Records
                                   </button>
+
+
 
                                   <button class="btn ghost" on:click={() => downloadPatientPdf(p.id)}>
                                     Export PDF
@@ -536,6 +748,26 @@ async function handleFileUpload(event) {
                 style="margin-top:12px;"
         >
             <h2 id="medical-records" style="margin:0 0 8px 0;">Medical Records</h2>
+            {#if recordsMode === 'patient'}
+              <div style="display:flex; gap:8px; margin: 8px 0;">
+                <button class="btn ghost" on:click={showAllRecords}>
+                  Show all records
+                </button>
+              </div>
+            {/if}
+
+            {#if selectedPatientKey}
+              <div class="notice" style="margin: 8px 0;">
+                Showing measurements for <b>{selectedPatientName}</b> ({selectedPatientKey})
+              </div>
+            {/if}
+
+            {#if loadingMeasurements}
+              <div style="margin:12px 0">Loading measurements…</div>
+            {:else if measurementsError}
+              <div class="notice" style="color:var(--danger)">{measurementsError}</div>
+            {/if}
+
             <p class="muted">
                 View and manage medical records with FHIR → OMOP mapping
             </p>
@@ -549,25 +781,25 @@ async function handleFileUpload(event) {
                         <th>Title</th>
                         <th>Date</th>
                         <th>Status</th>
-                        <th>Data Format</th>
+                        <th>Details</th>
                     </tr>
                     </thead>
                     <tbody>
-                    {#if records.length === 0}
+                    {#if displayedRecords.length === 0}
                         <tr>
                             <td colspan="6" class="muted">
                                 No records to display yet.
                             </td>
                         </tr>
                     {:else}
-                        {#each records as r}
+                        {#each displayedRecords as r}
                             <tr>
                                 <td data-label="Patient">{r.patientName}</td>
                                 <td data-label="Type">
                                     <span class="badge">{r.type}</span>
                                 </td>
                                 <td data-label="Title">{r.title}</td>
-                                <td data-label="Date">{formatDate(r.date)}</td>
+                                <td data-label="Date">{formatDateTime(r.date)}</td>
                                 <td data-label="Status">
                                         <span
                                                 class="chip"
@@ -579,19 +811,12 @@ async function handleFileUpload(event) {
                                             {r.status}
                                         </span>
                                 </td>
-                                <td data-label="Data Format">
-                                    <div
-                                            style="
-                                                display:flex;
-                                                gap:.25rem;
-                                                flex-wrap:wrap;
-                                            "
-                                    >
-                                        {#each r.formats || [] as f}
-                                            <span class="badge">{f}</span>
-                                        {/each}
-                                    </div>
+                                <td data-label="Details" style="text-align:right;">
+                                  <button class="btn ghost" on:click={() => openDetails(r)}>
+                                    View details
+                                  </button>
                                 </td>
+
                             </tr>
                         {/each}
                     {/if}
@@ -601,6 +826,107 @@ async function handleFileUpload(event) {
         </section>
     {/if}
 </main>
+{#if showDetailsDialog && detailsRecord}
+  <div
+    class="overlay"
+    style="
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.35);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:70;
+    "
+    on:click={closeDetails}
+  >
+    <div
+      class="card"
+      style="
+        width:min(760px,95%);
+        max-height:85vh;
+        overflow:auto;
+        padding:1.25rem;
+      "
+      on:click|stopPropagation
+    >
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+        <div>
+          <h3 style="margin:0;">Record details</h3>
+          <p class="muted" style="margin:4px 0 0 0;">
+            {detailsRecord.type} • {detailsRecord.patientName} ({detailsRecord.patientId})
+          </p>
+        </div>
+        <button class="btn ghost" on:click={closeDetails} aria-label="Close details">✕</button>
+      </div>
+
+      <div style="margin-top:14px; display:grid; gap:10px;">
+        <div class="panel" style="padding:12px;">
+          <div class="muted" style="font-size:0.85rem;">Title</div>
+          <div style="font-weight:700; font-size:1.05rem;">
+            {detailsRecord.title || '—'}
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="panel" style="padding:12px;">
+            <div class="muted" style="font-size:0.85rem;">Date / Time</div>
+            <div style="font-family:monospace;">
+              {formatDateTime(detailsRecord.date)}
+            </div>
+          </div>
+
+          <div class="panel" style="padding:12px;">
+            <div class="muted" style="font-size:0.85rem;">Value</div>
+            <div style="font-family:monospace; font-weight:700;">
+              {displayValueForRecord(detailsRecord)}
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" style="padding:12px;">
+          <div class="muted" style="font-size:0.85rem;">Source</div>
+          <div style="font-family:monospace;">
+            {detailsRecord.omopData?.source || detailsRecord.omopData?.measurementSourceValue || '—'}
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div class="panel" style="padding:12px;">
+            <div class="muted" style="font-size:0.85rem;">Status</div>
+            <div>{detailsRecord.status || '—'}</div>
+          </div>
+
+          <div class="panel" style="padding:12px;">
+            <div class="muted" style="font-size:0.85rem;">Format</div>
+            <div>{(detailsRecord.formats || []).join(', ') || '—'}</div>
+          </div>
+        </div>
+
+        <!-- Optional: Raw JSON (nice for debugging/demo) -->
+        <details class="panel" style="padding:12px;">
+          <summary style="cursor:pointer; font-weight:600;">Raw OMOP JSON</summary>
+          <pre style="margin:10px 0 0 0; white-space:pre-wrap; font-size:0.85rem;">
+{JSON.stringify(detailsRecord.omopData, null, 2)}
+          </pre>
+        </details>
+
+        {#if detailsRecord.fhirData}
+          <details class="panel" style="padding:12px;">
+            <summary style="cursor:pointer; font-weight:600;">Raw FHIR JSON</summary>
+            <pre style="margin:10px 0 0 0; white-space:pre-wrap; font-size:0.85rem;">
+{JSON.stringify(detailsRecord.fhirData, null, 2)}
+            </pre>
+          </details>
+        {/if}
+
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px;">
+          <button class="btn primary" on:click={closeDetails}>Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
 
 {#if showUploadDialog}
     <div

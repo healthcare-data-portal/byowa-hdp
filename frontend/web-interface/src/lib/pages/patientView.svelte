@@ -5,11 +5,64 @@
   import PersonalInfoForm from '$lib/components/PersonalInfoForm.svelte';
   import MedicalRecords from '$lib/pages/MedicalRecords.svelte';
   import PrivacyConsent from '$lib/pages/PrivacyConsent.svelte';
-
+  import { onMount } from 'svelte';
   export let personalInfo = null;
 
   let activeTab = 'personal';
   let isEdit = false;
+
+
+
+  const API_BASE =
+    import.meta.env.VITE_API_BASE ?? 'http://localhost:8080/api';
+
+  let totalRecords = 0;
+  let loadingTotalRecords = false;
+
+  function authFetch(url, options = {}) {
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers = new Headers(options.headers || {});
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+
+    return fetch(url, { ...options, headers, credentials: 'include' });
+  }
+
+  async function loadTotalRecordsOnLogin() {
+    loadingTotalRecords = true;
+    try {
+      const url = `${API_BASE.replace(/\/$/, '')}/measurements/me?limit=1000`;
+      const res = await authFetch(url);
+
+      if (!res.ok) {
+        // wenn z.B. patient nicht eingeloggt / token ungültig
+        totalRecords = 0;
+        return;
+      }
+
+      const data = await res.json().catch(() => []);
+      totalRecords = Array.isArray(data) ? data.length : 0;
+    } catch {
+      totalRecords = 0;
+    } finally {
+      loadingTotalRecords = false;
+    }
+  }
+
+  onMount(async () => {
+    await loadTotalRecordsOnLogin();
+  });
+
+
+  function handleMedicalCount(e) {
+    totalRecords = e?.detail?.total ?? 0;
+  }
+
+  $: consentText =
+    personalInfo?.consentGiven === true ? 'Consented'
+    : personalInfo?.consentGiven === false ? 'No Consent'
+    : '—';
+
+
 
   const toggleEdit = () => (isEdit = !isEdit);
   async function handleSave(e) {
@@ -128,11 +181,26 @@
       </div>
     </div>
 
-    <div class="cards" role="list">
-      <DashboardCard title="Total Records" description="Medical records on file" />
-      <DashboardCard title="Active Treatments" description="Ongoing medical care" />
-      <DashboardCard title="Data Consent" description="Data sharing consent status" format="text" />
-    </div>
+      <div class="cards" role="list">
+        <DashboardCard
+          title="Total Records"
+          description="Medical records on file"
+          value={totalRecords}
+        />
+        <DashboardCard
+          title="Active Treatments"
+          description="Ongoing medical care"
+          value={'—'}
+          format="text"
+        />
+        <DashboardCard
+          title="Data Consent"
+          description="Data sharing consent status"
+          value={consentText}
+          format="text"
+        />
+      </div>
+
   </section>
 
   {#if isEdit}
@@ -164,7 +232,7 @@
       <PersonalInfoForm editing={isEdit} {personalInfo} on:save={handleSave} on:cancel={handleCancel} />
     </section>
   {:else if activeTab === 'medical'}
-    <MedicalRecords />
+    <MedicalRecords on:count={handleMedicalCount} />
   {:else}
     <PrivacyConsent />
   {/if}
