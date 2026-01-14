@@ -63,9 +63,4 @@
     </div>
   </div>
 
-  <!-- Actions -->
-  <div class="actions-row">
-    <button class="btn outline" type="button" on:click={downloadHistory}>Download Consent History</button>
-    <button class="btn outline" type="button" on:click={viewUsageLog}>View Data Usage Log</button>
-  </div>
 </section>

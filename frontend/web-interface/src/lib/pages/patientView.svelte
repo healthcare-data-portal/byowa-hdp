@@ -60,7 +60,7 @@
   $: consentText =
     personalInfo?.consentGiven === true ? 'Consented'
     : personalInfo?.consentGiven === false ? 'No Consent'
-    : '—';
+    : 'Consented';
 
 
 
@@ -186,12 +186,6 @@
           title="Total Records"
           description="Medical records on file"
           value={totalRecords}
-        />
-        <DashboardCard
-          title="Active Treatments"
-          description="Ongoing medical care"
-          value={'—'}
-          format="text"
         />
         <DashboardCard
           title="Data Consent"
