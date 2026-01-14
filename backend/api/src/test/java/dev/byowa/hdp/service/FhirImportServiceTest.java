@@ -79,7 +79,7 @@ class FhirImportServiceTest {
             return l;
         });
 
-        when(userRepository.existsByUsername("PID123")).thenReturn(false);
+        when(userRepository.existsByUsername("PID123@hdp.com")).thenReturn(false);
         when(passwordEncoder.encode("PID123")).thenReturn("hashed");
 
         service.processPatient(fhir);
@@ -115,7 +115,7 @@ class FhirImportServiceTest {
         // No location change
         when(fhirPatientMapper.mapFhirPatientToLocation(fhir)).thenReturn(null);
 
-        when(userRepository.existsByUsername("PID999")).thenReturn(true); // no new user
+        when(userRepository.existsByUsername("PID999@hdp.com")).thenReturn(true); // no new user
 
         service.processPatient(fhir);
 
@@ -159,7 +159,7 @@ class FhirImportServiceTest {
         when(fhirPatientMapper.mapFhirPatientToLocation(fhir)).thenReturn(existingLoc);
         when(locationRepository.findByLocationSourceValue("LOC-EXIST")).thenReturn(Optional.of(existingLoc));
 
-        when(userRepository.existsByUsername("PID777")).thenReturn(true);
+        when(userRepository.existsByUsername("PID777@hdp.com")).thenReturn(true);
 
         service.processPatient(fhir);
 
@@ -187,7 +187,7 @@ class FhirImportServiceTest {
         updated.setProviderSourceValue("DOC2");
         when(fhirPractitionerMapper.mapFhirPractitionerToProvider(pr, existing)).thenReturn(updated);
 
-        when(userRepository.existsByUsername("DOC2")).thenReturn(true); // no new user
+        when(userRepository.existsByUsername("DOC2@hdp.com")).thenReturn(true); // no new user
 
         service.processPractitioner(pr);
 
@@ -222,7 +222,7 @@ class FhirImportServiceTest {
         when(fhirPractitionerMapper.mapFhirPractitionerToProvider(eq(pr), isNull())).thenReturn(mapped);
         when(providerRepository.findMaxId()).thenReturn(3);
 
-        when(userRepository.existsByUsername("DOC1")).thenReturn(false);
+        when(userRepository.existsByUsername("DOC1@hdp.com")).thenReturn(false);
         when(passwordEncoder.encode("DOC1")).thenReturn("pwd");
 
         service.processPractitioner(pr);
@@ -250,14 +250,14 @@ class FhirImportServiceTest {
         when(fhirPatientMapper.mapFhirPatientToOmop(any(Patient.class))).thenReturn(person);
         when(personRepository.findMaxId()).thenReturn(1);
         when(fhirPatientMapper.mapFhirPatientToLocation(any(Patient.class))).thenReturn(null);
-        when(userRepository.existsByUsername("P1")).thenReturn(true);
+        when(userRepository.existsByUsername("P1@hdp.com")).thenReturn(true);
 
         when(providerRepository.findByProviderSourceValue("D1")).thenReturn(Optional.empty());
         Provider provider = new Provider();
         provider.setProviderSourceValue("D1");
         when(fhirPractitionerMapper.mapFhirPractitionerToProvider(any(Practitioner.class), isNull())).thenReturn(provider);
         when(providerRepository.findMaxId()).thenReturn(1);
-        when(userRepository.existsByUsername("D1")).thenReturn(true);
+        when(userRepository.existsByUsername("D1@hdp.com")).thenReturn(true);
 
         // Process through JSON parser entry point
         String json = ca.uhn.fhir.context.FhirContext.forR4().newJsonParser().encodeResourceToString(bundle);
