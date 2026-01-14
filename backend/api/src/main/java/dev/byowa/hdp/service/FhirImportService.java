@@ -105,6 +105,7 @@ public class FhirImportService {
         }
 
         switch (resourceType) {
+            case "Bundle" -> processBundle((Bundle) resource);
             case "Patient" -> processPatient((Patient) resource);
             case "Practitioner" -> processPractitioner((Practitioner) resource);
             case "Observation" -> processObservation((Observation) resource);

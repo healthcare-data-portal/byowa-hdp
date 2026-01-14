@@ -7,6 +7,7 @@ import dev.byowa.hdp.model.Role;
 import dev.byowa.hdp.model.User;
 import dev.byowa.hdp.repository.MeasurementRepository;
 import dev.byowa.hdp.repository.PersonRepository;
+import dev.byowa.hdp.repository.ProviderRepository;
 import dev.byowa.hdp.repository.UserRepository;
 import dev.byowa.hdp.service.JwtService;
 import dev.byowa.hdp.service.PatientDoctorAssignmentService;
@@ -25,17 +26,20 @@ public class AdminController {
     private final PatientDoctorAssignmentService assignmentService;
     private final PersonRepository personRepository;
     private final MeasurementRepository measurementRepository;
+    private final ProviderRepository providerRepository;
 
     public AdminController(UserRepository userRepository,
                            JwtService jwtService,
                            PatientDoctorAssignmentService assignmentService,
                            PersonRepository personRepository,
-                           MeasurementRepository measurementRepository) {
+                           MeasurementRepository measurementRepository,
+                           ProviderRepository providerRepository) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
         this.assignmentService = assignmentService;
         this.personRepository = personRepository;
         this.measurementRepository = measurementRepository;
+        this.providerRepository = providerRepository;
     }
 
     @GetMapping("/users")
@@ -105,11 +109,13 @@ public class AdminController {
 
         long personCount = personRepository.count();
         long measurementCount = measurementRepository.count();
-        long totalRecords = personCount + measurementCount;
+        long providerCount = providerRepository.count();
+        long totalRecords = personCount + measurementCount + providerCount;
 
         return ResponseEntity.ok(java.util.Map.of(
                 "patients", personCount,
                 "observations", measurementCount,
+                "practitioners", providerCount,
                 "total", totalRecords
         ));
     }
