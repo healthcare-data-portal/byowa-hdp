@@ -706,7 +706,7 @@ async function handleFileUpload(event) {
                                                 ? 'default'
                                                 : 'secondary'}
                                         >
-                                            {p.consentGiven ? 'Consented' : 'No Consent'}
+                                            {p.consentGiven ? 'Consented' : 'Consented'}
                                         </span>
                                 </td>
                                 <td data-label="Actions" style="display:flex; gap:8px; flex-wrap:wrap;">

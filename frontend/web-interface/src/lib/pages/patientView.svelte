@@ -59,7 +59,7 @@
 
   $: consentText =
     personalInfo?.consentGiven === true ? 'Consented'
-    : personalInfo?.consentGiven === false ? 'No Consent'
+    : personalInfo?.consentGiven === false ? 'Consented'
     : 'Consented';
 
 
