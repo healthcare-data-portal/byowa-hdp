@@ -13,6 +13,13 @@
     let filter = '';
     let savingIds = new Set();
 
+    let activeRecords = 0;
+    let loadingRecords = true;
+
+    let showUploadDialog = false;
+    let uploadStatus = 'idle';
+    let uploadResult = null;
+
     let selectedPatientId = '';
     let selectedDoctorId = '';
     let assigning = false;
@@ -105,8 +112,111 @@
         }
     }
 
+    async function authFetch(url, options = {}) {
+        const token = localStorage.getItem('token');
+        const headers = new Headers(options.headers || {});
+        if (token) headers.set('Authorization', `Bearer ${token}`);
+
+        const res = await fetch(url, {
+            ...options,
+            headers,
+            credentials: 'include'
+        });
+        return res;
+    }
+
+    async function handleFileUpload(event) {
+        const files = Array.from(event.target.files || []);
+        if (files.length === 0) return;
+
+        uploadStatus = 'processing';
+        uploadResult = null;
+
+        const isSingle = files.length === 1;
+        let okCount = 0;
+        let failCount = 0;
+        let singleServerMsg = null;
+
+        try {
+            for (const file of files) {
+                try {
+                    const fileText = await file.text();
+                    const fhirData = JSON.parse(fileText);
+
+                    const endpoint = `${API}/fhir/import`;
+                    const res = await authFetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(fhirData)
+                    });
+
+                    if (!res.ok) {
+                        const errText = await res.text().catch(() => null);
+                        throw new Error(errText || `Import failed (${res.status})`);
+                    }
+
+                    const serverMsg = await res.text().catch(() => 'Import successful');
+                    okCount++;
+
+                    if (isSingle) {
+                        singleServerMsg = serverMsg;
+                    }
+                } catch (fileErr) {
+                    failCount++;
+                    if (isSingle) throw fileErr;
+                }
+            }
+
+            // Refresh records count after successful upload
+            if (okCount > 0) {
+                await loadRecordsCount();
+            }
+
+            if (isSingle) {
+                uploadStatus = 'success';
+                uploadResult = {
+                    message: singleServerMsg || 'FHIR resource imported successfully.'
+                };
+            } else {
+                uploadStatus = okCount > 0 ? 'success' : 'error';
+                uploadResult = {
+                    message: `Uploaded ${files.length} file(s): ${okCount} successful, ${failCount} failed.`
+                };
+            }
+        } catch (err) {
+            uploadStatus = 'error';
+            uploadResult = {
+                message: err?.message || 'Failed to process FHIR file(s). Check format and try again.'
+            };
+        }
+
+        event.target.value = '';
+    }
+
+    function closeUploadDialog() {
+        showUploadDialog = false;
+        uploadStatus = 'idle';
+        uploadResult = null;
+    }
+
+    async function loadRecordsCount() {
+        loadingRecords = true;
+        try {
+            const res = await fetch(`${API}/admin/stats/records`, { headers: authHeaders() });
+            if (res.ok) {
+                const data = await res.json();
+                activeRecords = data.total || 0;
+            }
+        } catch (e) {
+            console.error('Failed to load records count', e);
+        } finally {
+            loadingRecords = false;
+        }
+    }
+
     onMount(() => {
         loadUsers();
+        loadRecordsCount();
     });
 
     $: patients = users.filter((u) => u.role === 'PATIENT');
@@ -152,31 +262,25 @@
                 />
                 <span>Active Records</span>
             </div>
-            <div class="stat-value">—</div>
+            <div class="stat-value">{loadingRecords ? '…' : activeRecords}</div>
         </div>
 
         <div class="card">
             <div class="stat-title">
                 <img
-                        src="/src/lib/assets/pictures/document.png"
-                        alt="FHIR messages"
+                        src="/src/lib/assets/pictures/download-black.png"
+                        alt="Upload"
                         class="stat-icon"
                 />
-                <span>FHIR Messages</span>
+                <span>Upload FHIR</span>
             </div>
-            <div class="stat-value">—</div>
-        </div>
-
-        <div class="card">
-            <div class="stat-title">
-                <img
-                        src="/src/lib/assets/pictures/shield.png"
-                        alt="System health"
-                        class="stat-icon"
-                />
-                <span>System Health</span>
-            </div>
-            <div class="stat-value">—</div>
+            <button
+                    class="btn primary"
+                    style="margin-top:0.75rem;width:100%;"
+                    on:click={() => (showUploadDialog = true)}
+            >
+                Import Data
+            </button>
         </div>
     </div>
 
@@ -295,26 +399,145 @@
         </div>
     </div>
 
-    <div class="section">
-        <div class="title">FHIR Message Processing</div>
-        <div class="desc">Monitor FHIR to OMOP data conversion status</div>
-
-        <div class="table-wrap">
-            <table class="table">
-                <thead>
-                <tr>
-                    <th class="th">Message ID</th>
-                    <th class="th">Resource Type</th>
-                    <th class="th">Patient ID</th>
-                    <th class="th">Timestamp</th>
-                    <th class="th">Status</th>
-                    <th class="th">OMOP Mapped</th>
-                </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-
-        <div class="empty">No messages to display yet.</div>
-    </div>
 </div>
+
+{#if showUploadDialog}
+    <div
+            class="upload-overlay"
+            style="
+            position:fixed;
+            inset:0;
+            background:rgba(0,0,0,0.35);
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            z-index:60;
+        "
+    >
+        <div
+                class="card"
+                style="
+                width:min(600px,95%);
+                max-height:85vh;
+                overflow:auto;
+                padding:1.25rem;
+            "
+        >
+            <div
+                    style="
+                    display:flex;
+                    justify-content:space-between;
+                    align-items:center;
+                    margin-bottom:0.5rem;
+                "
+            >
+                <div>
+                    <h3 style="margin:0;">Upload FHIR Message</h3>
+                    <p
+                            class="muted"
+                            style="margin:4px 0 0 0;font-size:0.95rem;"
+                    >
+                        Upload FHIR files. Patients will not be auto-assigned to any doctor.
+                    </p>
+                </div>
+                <button
+                        class="btn ghost"
+                        on:click={closeUploadDialog}
+                        aria-label="Close upload dialog"
+                >
+                    ✕
+                </button>
+            </div>
+
+            <div style="margin-top:1rem;">
+                {#if uploadStatus === 'idle'}
+                    <label for="fhir-upload" style="display:block;cursor:pointer;">
+                        <div
+                                style="
+                                border:2px dashed var(--border);
+                                padding:1.25rem;
+                                border-radius:8px;
+                                text-align:center;
+                            "
+                        >
+                            <div style="margin-bottom:0.5rem;">
+                                <img src="/src/lib/assets/pictures/download-black.png" alt="Upload" style="width:48px;height:48px;" />
+                            </div>
+                            <div style="font-weight:600;">
+                                Click to upload FHIR file
+                            </div>
+                            <div
+                                    class="muted"
+                                    style="font-size:0.9rem;margin-top:.25rem;"
+                            >
+                                or drag and drop (JSON .fhir)
+                            </div>
+                            <input
+                                    id="fhir-upload"
+                                    type="file"
+                                    accept=".json,.fhir"
+                                    multiple
+                                    on:change={handleFileUpload}
+                                    style="display:none;"
+                            />
+                        </div>
+                    </label>
+                {:else if uploadStatus === 'processing'}
+                    <div style="text-align:center;padding:2rem 1rem;">
+                        Processing FHIR message…
+                    </div>
+                {:else if uploadStatus === 'success'}
+                    <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                        <div
+                                style="
+                                display:flex;
+                                gap:0.75rem;
+                                align-items:center;
+                                padding:0.75rem;
+                                border-radius:6px;
+                                background:#ecfdf5;
+                                border:1px solid #bbf7d0;
+                            "
+                        >
+                            <div>✅</div>
+                            <div>
+                                <div style="font-weight:600;">Upload Successful</div>
+                                <div class="muted" style="font-size:0.95rem;">
+                                    {uploadResult?.message}
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn primary" on:click={closeUploadDialog}>
+                            Close
+                        </button>
+                    </div>
+                {:else if uploadStatus === 'error'}
+                    <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                        <div
+                                style="
+                                display:flex;
+                                gap:0.75rem;
+                                align-items:center;
+                                padding:0.75rem;
+                                border-radius:6px;
+                                background:#fef2f2;
+                                border:1px solid #fecaca;
+                            "
+                        >
+                            <div>❌</div>
+                            <div>
+                                <div style="font-weight:600;">Upload Failed</div>
+                                <div class="muted" style="font-size:0.95rem;">
+                                    {uploadResult?.message}
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn primary" on:click={() => (uploadStatus = 'idle')}>
+                            Try Again
+                        </button>
+                    </div>
+                {/if}
+            </div>
+        </div>
+    </div>
+{/if}

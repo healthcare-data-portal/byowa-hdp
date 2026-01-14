@@ -5,6 +5,8 @@ import dev.byowa.hdp.dto.UpdateRoleRequest;
 import dev.byowa.hdp.dto.UserSummary;
 import dev.byowa.hdp.model.Role;
 import dev.byowa.hdp.model.User;
+import dev.byowa.hdp.repository.MeasurementRepository;
+import dev.byowa.hdp.repository.PersonRepository;
 import dev.byowa.hdp.repository.UserRepository;
 import dev.byowa.hdp.service.JwtService;
 import dev.byowa.hdp.service.PatientDoctorAssignmentService;
@@ -21,13 +23,19 @@ public class AdminController {
     private final UserRepository userRepository;
     private final JwtService jwtService;
     private final PatientDoctorAssignmentService assignmentService;
+    private final PersonRepository personRepository;
+    private final MeasurementRepository measurementRepository;
 
     public AdminController(UserRepository userRepository,
                            JwtService jwtService,
-                           PatientDoctorAssignmentService assignmentService) {
+                           PatientDoctorAssignmentService assignmentService,
+                           PersonRepository personRepository,
+                           MeasurementRepository measurementRepository) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
         this.assignmentService = assignmentService;
+        this.personRepository = personRepository;
+        this.measurementRepository = measurementRepository;
     }
 
     @GetMapping("/users")
@@ -87,6 +95,23 @@ public class AdminController {
         } catch (IllegalArgumentException ex) {
             return ResponseEntity.badRequest().body(ex.getMessage());
         }
+    }
+
+    @GetMapping("/stats/records")
+    public ResponseEntity<?> getFhirRecordsCount(HttpServletRequest req) {
+        if (!isAdmin(req)) {
+            return ResponseEntity.status(403).body("Forbidden");
+        }
+
+        long personCount = personRepository.count();
+        long measurementCount = measurementRepository.count();
+        long totalRecords = personCount + measurementCount;
+
+        return ResponseEntity.ok(java.util.Map.of(
+                "patients", personCount,
+                "observations", measurementCount,
+                "total", totalRecords
+        ));
     }
 
     private boolean isAdmin(HttpServletRequest req) {
